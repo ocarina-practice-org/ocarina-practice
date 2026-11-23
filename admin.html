@@ -331,7 +331,7 @@ function readTaskForm(){
   const v = id => document.getElementById(id).value;
   return { id: A.edit.id, title: v('tTitle'), note: v('tNote'), group: v('tGroup'), target: v('tTarget'), points: v('tPoints'),
            startDate: v('tStart'), endDate: v('tEnd'), notes: v('tNotes'), bpm: v('tBpm'),
-           song: A.edit.song || '', from: A.edit.from || 0, to: A.edit.to || 0 };
+           song: v('tSong'), from: v('tFrom'), to: v('tTo') };
 }
 
 async function copyLast(){
