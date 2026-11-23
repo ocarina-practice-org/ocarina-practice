@@ -15,5 +15,5 @@ window.OP_FIREBASE = {
   adminEmail: "a0929870116@gmail.com",  /* 登入頁預設填入的老師 Email */
   /* 老師後台可以登入的所有帳號（要先在 Authentication 建立這些 Email／密碼的使用者）；
      firestore.rules 裡的管理者 email 清單要和這裡一樣 */
-  adminEmails: ["a0929870116@gmail.com", "efland95@gmail.com"]
+  adminEmails: ["a0929870116@gmail.com", "elfland95@gmail.com"]
 };
