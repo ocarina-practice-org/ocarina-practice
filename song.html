@@ -145,7 +145,7 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
     <div class="resline" id="resLine" hidden>
       <div class="verdict"><img id="resMas" class="resmas" alt=""><span id="verdict"></span></div>
       <div class="legend" id="legend">
-        <span><i style="background:var(--ruby)"></i>音準不對（↑偏高　↓偏低　✕錯音　漏）</span>
+        <span><i style="background:var(--ruby)"></i>音準不對（↑偏高　↓偏低　✕錯音／漏吹）</span>
         <span><i style="background:var(--amber)"></i>拍子不對（早／晚）</span>
       </div>
     </div>
@@ -547,7 +547,7 @@ function colorOf(r){
   return 'var(--ink)';                          /* 對的音維持原本顏色，不標示 */
 }
 function badgeOf(r){
-  if(r.miss)return '漏';
+  if(r.miss)return '✕';   /* 漏吹和吹錯音都歸在錯音（✕） */
   let s='';
   if(r.pitch==='high')s+='↑';else if(r.pitch==='low')s+='↓';else if(r.pitch==='wrong')s+='✕';
   if(r.timing==='early')s+='早';else if(r.timing==='late')s+='晚';else if(r.timing===null&&r.pitch!=='wrong')s+='?';
