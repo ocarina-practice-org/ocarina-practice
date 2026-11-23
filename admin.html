@@ -95,7 +95,7 @@ input,select{border:1px solid #cfc4b0;border-radius:10px;font-family:inherit}
 <body>
 <div id="app"></div>
 <datalist id="groupList"></datalist>
-<script src="core.js?v=2"></script>
+<script src="core.js?v=3"></script>
 <script src="songs.js?v=10"></script>
 <script src="gloria-songs.js?v=3"></script>
 <script src="firebase-config.js"></script>
@@ -306,6 +306,7 @@ const HELP = {
   coverage: '跟拍模式：每個音要吹到它長度的幾 % 才算。越小越寬',
   freeSec: '自由吹奏：要累積吹出穩定聲音幾秒',
   speed1: '三個速度階段（原速的幾 %），學生可選擇；預設 100／90／80',
+  dailyGoal: '學生頁的「今日目標」：每天全對幾次算達標（預設 3）。純粹是鼓勵用的進度條，不影響積分',
   speed2: '', speed3: '', clickOn: '跟拍時是否播放節拍聲（建議戴耳機）'
 };
 function adminSettings(){
@@ -319,6 +320,8 @@ function adminSettings(){
     <div class="row2">${num('timingBeats')}${num('coverage')}</div><p class="mini">${esc(HELP.timingBeats)}<br>${esc(HELP.coverage)}</p>
     <h2>樂曲速度三個階段</h2>
     <div class="row3">${num('speed1')}${num('speed2')}${num('speed3')}</div><p class="mini">${esc(HELP.speed1)}</p>
+    <h2>學生頁鼓勵設定</h2>
+    <div class="row2">${num('dailyGoal')}<div></div></div><p class="mini">${esc(HELP.dailyGoal)}</p>
     <label>${esc(L.clickOn)}</label><select id="s_clickOn"><option value="1" ${s.clickOn ? 'selected' : ''}>開</option><option value="0" ${!s.clickOn ? 'selected' : ''}>關</option></select>
     ${A.setErr ? '<div class="err">' + esc(A.setErr) + '</div>' : ''}
     <div style="margin-top:14px"><button class="btn green big" data-act="saveSettings">儲存設定</button></div></div>`;

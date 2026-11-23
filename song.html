@@ -53,7 +53,8 @@ ul.errs li b{font-weight:800}
 .tag{display:inline-block;font-size:12px;padding:0 7px;border-radius:9px;color:#fff;margin-right:4px}
 .tag.bad{background:var(--ruby)}.tag.mid{background:var(--amber)}
 .resline{margin-top:4px;text-align:center}
-.resline .verdict{font-size:16px;margin:0 0 2px}
+.resline .verdict{font-size:16px;margin:0 0 2px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800}
+.resmas{height:38px;width:auto}
 .legend{display:flex;gap:12px;font-size:12px;color:var(--ink-2);margin-top:2px;flex-wrap:wrap;justify-content:center}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
 .gauge{position:relative;height:26px;margin:8px 0 4px;border:2px solid var(--ink-2);border-radius:13px;background:linear-gradient(90deg,#f3d9c8,#fff8 38%,#fff8 62%,#f3d9c8);overflow:hidden}
@@ -96,7 +97,7 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
   #scoreCard{padding:4px 8px}
   .pager{margin:0 0 1px;gap:8px;font-size:12px}
   .pager button{font-size:12px;padding:0 10px}
-  svg.score{max-height:calc(100vh - 170px)}
+  svg.score{max-height:calc(100vh - 182px)}
   #ctlCard{display:flex;gap:8px;align-items:center}
   #ctlCard .btnrow{flex:1;gap:6px}
   #ctlCard .btn{font-size:15px;padding:8px 4px;min-height:44px}
@@ -142,7 +143,7 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
     <div class="pager"><button id="pgPrev" aria-label="上一句">◀</button><span id="pgInfo"></span><button id="pgNext" aria-label="下一句">▶</button></div>
     <svg class="score" id="score" viewBox="0 0 340 330" role="img" aria-label="樂譜"></svg>
     <div class="resline" id="resLine" hidden>
-      <div class="verdict" id="verdict"></div>
+      <div class="verdict"><img id="resMas" class="resmas" alt=""><span id="verdict"></span></div>
       <div class="legend" id="legend">
         <span><i style="background:var(--ruby)"></i>音準不對（偏高／偏低／錯音／漏）</span>
         <span><i style="background:var(--amber)"></i>拍子不對（早／晚）</span>
@@ -836,6 +837,7 @@ function showResult(res){
   setPage(first);
   $('legend').hidden=false;$('resLine').hidden=false;
   const k=taskKey(),v=$('verdict'),N=res.length;
+  $('resMas').src='mascot/'+(s.counted&&s.perfect?'p02':'p15')+'.png';   /* 全對＝開心抬腿；沒全對＝低頭（搭配鼓勵的話） */
   const hint='';
   if(!s.counted){
     v.textContent='好像沒吹完，這次不算次數，請再試一次';v.style.color='var(--ruby)';
@@ -847,12 +849,12 @@ function showResult(res){
       if(s.perfect){
         const msg=Core.recordPerfect(TASK.id),n=Core.P.tasks[TASK.id];
         v.textContent=(n===GOAL?'🎉 完成任務！':'🌟 全對！第 '+n+' 次')+msg;v.style.color='var(--green)';
-      }else{v.textContent='還沒全對，看標色的音'+hint;v.style.color='var(--ink)';}
+      }else{v.textContent='沒關係，看標色的音再來一次'+hint;v.style.color='var(--ink)';}
       renderP();
     }else{
       P.played[k]=(P.played[k]|0)+1;
       if(s.perfect){P.tasks[k]=(P.tasks[k]|0)+1;v.textContent='🌟 全對！這段第 '+P.tasks[k]+' 次';v.style.color='var(--green)';}
-      else{v.textContent='還沒全對，看標色的音'+hint;v.style.color='var(--ink)';}
+      else{v.textContent='沒關係，看標色的音再來一次'+hint;v.style.color='var(--ink)';}
       saveP();renderP();
     }
   }

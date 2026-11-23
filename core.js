@@ -6,12 +6,12 @@
 
 /* ---------- 放寬設定（老師後台可改，存在 settings/config）---------- */
 const DEFAULTS = { tol: 75, holdMs: 700, missPct: 25, timingBeats: 0.5, coverage: 50, freeSec: 8,
-                   speed1: 100, speed2: 90, speed3: 80, clickOn: 1 };
+                   speed1: 100, speed2: 90, speed3: 80, clickOn: 1, dailyGoal: 3 };
 const RANGES = { tol: [30, 90], holdMs: [300, 1500], missPct: [0, 50], timingBeats: [0.25, 1.5], coverage: [20, 100],
-                 freeSec: [3, 20], speed1: [30, 100], speed2: [30, 100], speed3: [30, 100], clickOn: [0, 1] };
+                 freeSec: [3, 20], speed1: [30, 100], speed2: [30, 100], speed3: [30, 100], clickOn: [0, 1], dailyGoal: [1, 20] };
 const LABELS = { tol: '音準容許（音分）', holdMs: '每個音要吹多久（毫秒）', missPct: '可以漏掉的音（%）',
                  timingBeats: '節奏可早晚（拍）', coverage: '每個音要吹到的比例（%）', freeSec: '自由吹奏需累積（秒）',
-                 speed1: '速度階段 1（%）', speed2: '速度階段 2（%）', speed3: '速度階段 3（%）', clickOn: '節拍聲' };
+                 speed1: '速度階段 1（%）', speed2: '速度階段 2（%）', speed3: '速度階段 3（%）', clickOn: '節拍聲', dailyGoal: '每日全對目標（次）' };
 const DAILY_CAP = 5;   /* 每人每項任務每天最多記幾次（firestore.rules 也限制 k ≤ 5，兩邊要一樣） */
 const LEVELS = [
   { min: 0,   name: '陶笛蛋',     icon: '🥚' },

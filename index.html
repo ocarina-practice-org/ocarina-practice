@@ -60,6 +60,20 @@ label{display:block;font-weight:700;margin:12px 0 4px}
 @keyframes pop{from{transform:translateX(-50%) scale(.6);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
 .fly{position:fixed;bottom:-30px;font-size:2rem;z-index:75;animation:fly 2.2s ease-out forwards;pointer-events:none}
 @keyframes fly{to{transform:translateY(-110vh) rotate(40deg);opacity:0}}
+/* 學生頁上方：精靈＋連續天數＋今日目標＋累計（Duolingo 式的簡單版） */
+.hero{background:#fcf3dd}
+.heroTop{display:flex;gap:12px;align-items:center}
+.mas{width:96px;height:auto;flex:none}
+.say{font-weight:900;font-size:1.15rem;line-height:1.35}
+.streak{display:inline-flex;align-items:center;gap:6px;background:#fff;border:3px solid var(--ink);border-radius:999px;padding:3px 12px;font-weight:900;margin-bottom:6px}
+.streak.off{opacity:.55}
+.goal{margin-top:12px}
+.goal .gl{display:flex;justify-content:space-between;font-weight:900}
+.bar.ok>i{background:var(--orange)}
+.hero .stats{margin-top:10px}
+.celeb{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#fcf3dd;border:3px solid var(--ink);border-radius:22px;box-shadow:4px 4px 0 var(--ink);padding:8px 20px 8px 10px;display:flex;gap:10px;align-items:center;z-index:80;animation:pop .25s ease-out;width:max-content;max-width:92vw}
+.celeb .mas{width:78px}
+.celeb b{font-size:1.2rem}
 /* 收音面板 */
 .nrow{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 .nchip{min-width:44px;text-align:center;border:3px solid var(--ink);border-radius:14px;padding:4px 8px;background:#fff;font-weight:900;font-size:1.15rem;line-height:1.2}
@@ -79,7 +93,7 @@ label{display:block;font-weight:700;margin:12px 0 4px}
 <body>
 <div id="app"></div>
 <datalist id="groupList"></datalist>
-<script src="core.js?v=2"></script>
+<script src="core.js?v=3"></script>
 <script src="firebase-config.js"></script>
 <script src="student-auth.js"></script>
 <script src="student-data.js"></script>
@@ -231,25 +245,71 @@ function taskCard(t, m){
   </div>`;
 }
 
+const MAS = n => 'mascot/p' + String(n).padStart(2, '0') + '.png';
+function masImg(n, alt){ return `<img class="mas" src="${MAS(n)}" alt="${esc(alt || '陶笛精靈')}">`; }
+/* 精靈依狀態換動作與說的話（12 揮手、14 開心、6 跑步、4 趴著睡） */
+function heroSay(m){
+  const s = m.stats;
+  if (!s.total) return { pose: 12, say: '歡迎！先挑一個任務，吹到全對一次就會記下來。', sub: '' };
+  if (s.todayCount >= s.goal) return { pose: 14, say: '今天的目標達成了！', sub: '想再練也可以，每個任務一天最多記 ' + m.dailyCap + ' 次。' };
+  if (s.todayCount > 0) return { pose: 6, say: '再 ' + (s.goal - s.todayCount) + ' 次全對就達標了。', sub: '今天已經全對 ' + s.todayCount + ' 次。' };
+  if (s.streak > 0) return { pose: 12, say: '今天還沒練習，來吹一首吧。', sub: '已連續 ' + s.streak + ' 天，今天吹一次就能接著算。' };
+  return { pose: 4, say: '好久不見，從一小段開始吧。', sub: '吹到全對一次，連續天數就重新開始。' };
+}
+function heroHtml(m){
+  const s = m.stats, h = heroSay(m), pct = Math.min(100, Math.round(s.todayCount / s.goal * 100));
+  const diff = s.weekCount - s.lastWeekCount;
+  const cmp = !s.total ? '' : diff > 0 ? '比上週多了 ' + diff + ' 次，繼續保持。' : diff < 0 ? '上週全對 ' + s.lastWeekCount + ' 次。' : s.weekCount ? '和上週一樣多。' : '';
+  return `<div class="card hero">
+    <div class="heroTop">${masImg(h.pose)}
+      <div><div class="streak ${s.streak ? '' : 'off'}">🔥 連續 ${s.streak} 天</div>
+        <div class="say">${esc(h.say)}</div>${h.sub ? `<div class="mini">${esc(h.sub)}</div>` : ''}</div></div>
+    <div class="goal"><div class="gl"><span>今日目標</span><span>${Math.min(s.todayCount, s.goal)} / ${s.goal} 次全對</span></div>
+      <div class="bar ${s.todayCount >= s.goal ? 'ok' : ''}"><i style="width:${pct}%"></i></div></div>
+    <div class="stats"><div class="stat"><b>${s.total}</b><span class="mini">累計全對</span></div>
+      <div class="stat"><b>${s.weekCount}</b><span class="mini">本週全對</span></div>
+      <div class="stat"><b>${s.weekDays}</b><span class="mini">練習天數</span></div></div>
+    <div class="mini" style="margin-top:8px">${esc(cmp)}${cmp ? '　' : ''}積分 ${m.points}</div>
+  </div>`;
+}
+
 function viewStudent(){
-  const m = S.me, L = m.level;
-  const pct = L.nextMin ? Math.min(100, Math.round((m.points - L.min) / (L.nextMin - L.min) * 100)) : 100;
+  const m = S.me;
   const cur = m.tasks.filter(t => t.status === 'current'), past = m.tasks.filter(t => t.status !== 'current');
   $app.innerHTML = `
     <div class="top"><div><h1>${esc(m.name)}</h1><div class="sub">${esc(m.group)}</div></div><button class="btn small" data-act="logout">登出</button></div>
+    ${heroHtml(m)}
     <h2>📋 這週的練習任務</h2>
     ${cur.length ? cur.map(t => taskCard(t, m)).join('') : '<div class="card">這週老師還沒有派任務，先好好休息 ☺️</div>'}
     ${past.length ? `<button class="link" data-act="togglePast">${S.showPast ? '▼ 收起' : '▶ 看以前的任務'}（${past.length}）</button>${S.showPast ? past.map(t => taskCard(t, m)).join('') : ''}` : ''}`;
 }
 
+/* 過關後的小慶祝：精靈＋一句話（取代原本的文字彈跳） */
+function celebrate(pose, title, sub){
+  const old = document.querySelector('.celeb'); if (old) old.remove();
+  const el = document.createElement('div'); el.className = 'celeb';
+  el.innerHTML = masImg(pose) + `<div><b>${esc(title)}</b>${sub ? `<div class="mini">${esc(sub)}</div>` : ''}</div>`;
+  document.body.appendChild(el); setTimeout(() => el.remove(), 3000);
+}
+const TOTAL_MS = [10, 25, 50, 100, 150, 200, 300, 500, 750, 1000], STREAK_MS = [3, 7, 14, 30, 60, 100];
+function pickCelebration(prev, j){
+  const a = prev || { total: 0, streak: 0, todayCount: 0, goal: 3 }, b = j.me.stats;
+  if (j.awarded) return [14, '任務完成！', '+' + j.awarded + ' 分'];
+  const tm = TOTAL_MS.filter(x => a.total < x && b.total >= x).pop();
+  if (tm) return [7, '累計全對 ' + tm + ' 次！', '你的穩定度一直在進步。'];
+  const sm = STREAK_MS.filter(x => a.streak < x && b.streak >= x).pop();
+  if (sm) return [7, '連續練習 ' + sm + ' 天！', '持續練習最有效。'];
+  if (a.todayCount < b.goal && b.todayCount >= b.goal) return [14, '今天的目標達成！', '累計全對 ' + b.total + ' 次'];
+  return [2, '全對！', '今天第 ' + b.todayCount + ' 次，累計 ' + b.total + ' 次'];
+}
+
 async function submitPractice(id, pct){
   if (S.busy) return; S.busy = true;
   try {
+    const prev = S.me && S.me.stats;
     const j = await api('practice', { token: S.token, taskId: id, pct: pct });
     S.me = j.me; viewStudent();
-    if (j.leveledUp){ toast('🎊 升級了！' + j.me.level.icon + ' ' + j.me.level.name, 3000); confetti(); }
-    else if (j.awarded){ toast('🌟 任務完成！+' + j.awarded + ' 分', 2600); confetti(); }
-    else { toast('過關！+1 🎵', 1400); confetti(); }
+    const c = pickCelebration(prev, j); celebrate(c[0], c[1], c[2]); confetti();
   } catch(e){ toast(e.message, 2800); if (/重新登入/.test(e.message)) { S.me = null; viewLogin(); } }
   S.busy = false;
 }

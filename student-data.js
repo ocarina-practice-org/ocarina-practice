@@ -26,6 +26,19 @@ function make(svc, who) {
     }, function (e) { throw E(isDenied(e) ? '請重新登入' : '連不上資料庫，請檢查網路再試一次', isDenied(e) ? 'denied' : 'net'); });
   }
 
+  /* 鼓勵用的統計：全部由練習紀錄算出，不存資料庫。連續天數：只算有練習的天，漏一天不中斷、連漏兩天才歸零 */
+  function stats(today, goal) {
+    var days = {}, total = C.logs.length, tc = 0, wk = 0, lw = 0, wd = {}, ws = OPC.weekStartDay(today);
+    C.logs.forEach(function (l) {
+      var d = Number(l.day); days[d] = 1;
+      if (d === today) tc++;
+      if (d >= ws && d <= ws + 6) { wk++; wd[d] = 1; } else if (d >= ws - 7 && d <= ws - 1) lw++;
+    });
+    var ds = Object.keys(days).map(Number).sort(function (a, b) { return b - a; }), streak = 0;
+    if (ds.length && today - ds[0] <= 2) { streak = 1; for (var i = 1; i < ds.length; i++) { if (ds[i - 1] - ds[i] <= 2) streak++; else break; } }
+    return { total: total, streak: streak, todayCount: tc, goal: goal, weekCount: wk, lastWeekCount: lw, weekDays: Object.keys(wd).length };
+  }
+
   function build() {
     var today = OPC.todayDay(), st = C.settings;
     var comp = OPC.compute(who.group, C.tasks, C.logs, C.adjs, today);
@@ -41,6 +54,7 @@ function make(svc, who) {
                count: Math.min(p.count, t.target), done: p.done, todayCount: p.todayCount };
     });
     return { id: who.sid, name: who.name, group: who.group, points: comp.points, level: comp.level, tasks: tasks,
+             stats: stats(today, Math.round(st.dailyGoal) || 3),
              dailyCap: OPC.DAILY_CAP, today: OPC.dayToDate(today), settings: st, speeds: OPC.speeds(st) };
   }
 
