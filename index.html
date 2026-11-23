@@ -218,20 +218,15 @@ function dots(t){
 
 function taskCard(t, m){
   const cap = m.dailyCap, full = t.todayCount >= cap;
-  const hasNotes = t.notes && t.notes.length;
-  const how = !hasNotes ? '自由吹奏：對著麥克風穩定吹一段' : (t.bpm > 0 ? '跟著節拍吹（' + t.bpm + ' BPM）' : '照順序把每個音吹準');
-  const stages = t.bpm > 0 && hasNotes ? '<div class="mini">速度階段：' + m.speeds.map(p => p + '%' + (t.bestPct >= p ? '✅' : '')).join('　') + '</div>' : '';
   return `<div class="card task ${t.done ? 'done' : ''}">
     <div class="ttl">${esc(t.title)}</div>
     ${t.note ? `<div class="note">${esc(t.note)}</div>` : ''}
-    ${hasNotes ? '<div class="nrow">' + t.notes.map(x => `<span class="nchip ${x.n === 0 ? 'rest' : ''}">${noteHtml(x.n)}${x.b !== 1 ? '<small>' + x.b + '拍</small>' : ''}</span>`).join('') + '</div>' : ''}
-    <div class="mini">🎤 ${how}　·　${esc(t.startDate.slice(5))} ～ ${esc(t.endDate.slice(5))}</div>
-    ${stages}
+    <div class="mini">🎼 樂譜練習　·　${esc(t.startDate.slice(5))} ～ ${esc(t.endDate.slice(5))}</div>
     ${dots(t)}
     <div class="mini" style="margin-bottom:10px">${t.count} / ${t.target} 次　·　完成可得 ${t.points} 分${!t.done ? `　·　今天已記 ${t.todayCount}/${cap}` : ''}</div>
     ${t.done ? '<span class="badge">🌟 已完成！</span>'
       : t.status === 'current'
-        ? `${t.song ? `<button class="btn alt big" data-act="song" data-id="${esc(t.id)}" ${full ? 'disabled' : ''}>🎼 樂譜練習</button>` : ''}<button class="btn big" data-act="mic" data-id="${esc(t.id)}" ${full ? 'disabled' : ''}>${full ? '今天記滿囉，明天再來' : '🎤 開始吹奏'}</button>`
+        ? (t.song ? `<button class="btn big" data-act="song" data-id="${esc(t.id)}" ${full ? 'disabled' : ''}>${full ? '今天記滿囉，明天再來' : '🎼 樂譜練習'}</button>` : '<span class="mini">這個任務還沒有樂譜</span>')
         : '<span class="mini">這個任務已經結束</span>'}
   </div>`;
 }
