@@ -65,6 +65,19 @@ ul.errs li b{font-weight:800}
 .pager button:disabled{opacity:.35}
 body.focus .pager button{visibility:hidden}
 body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #mockNote,body.focus #inapp,body.focus #ctlCard .row,body.focus #ctlCard .hint,body.focus #goBtn{display:none}
+@media (orientation:portrait){
+  /* 直向：一句 2 小節，標題、說明收掉，樂譜＋開始吹奏＋聽示範＋速度擠在同一屏 */
+  body{padding:6px 10px calc(8px + env(safe-area-inset-bottom))}
+  h1,#protoNote,#mockNote,#ctlCard .hint,#rowSong,#rowPreset,#rowRange,#ctlCard .row:has(#tol){display:none}
+  .back{padding:0;font-size:14px}
+  .card{margin:0 0 8px;padding:8px 10px}
+  #taskCard .bar{margin:4px 0 2px;height:12px}
+  #taskCard .task{font-size:15px}
+  #scoreTitle{font-size:14px;margin:0 0 2px}
+  .pager{margin:0 0 2px}
+  #ctlCard .btn{padding:10px;font-size:18px}
+  #ctlCard .row{margin-top:6px}
+}
 @media (orientation:landscape) and (min-width:560px){
   /* 橫向：左邊大樂譜；右邊一欄集中「返回、開始吹奏、聽示範、速度」，整頁不捲動 */
   body{padding:4px 8px calc(4px + env(safe-area-inset-bottom))}
@@ -194,8 +207,8 @@ function beatLabel(b){
 
 /* ========== 畫譜（SVG）：依小節範圍動態排版 ========== */
 const ACC_PAD=1.0;   /* 有升降記號的音符，左邊多留的寬度（單位同 wOf） */
-let W=340;const CLEF_W=46,ROW_H=150,STEP=4,LINE_GAP=8;let AVAIL=W-CLEF_W-6;
-/* 動態分頁：一次只顯示一「句」（橫向 2 小節、直向 3 小節），吹到下一句自動翻頁，不用捲動 */
+let W=340;let ROW_H=150;const CLEF_W=46,STEP=4,LINE_GAP=8;let AVAIL=W-CLEF_W-6;
+/* 動態分頁：一次只顯示一「句」（橫向直向都是 2 小節），吹到下一句自動翻頁，不用捲動 */
 let PAGES=[],curPage=0;
 function isLand(){return window.matchMedia('(orientation:landscape)').matches&&window.innerWidth>=560;}
 function el(tag,attrs,parent,text){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e;}
@@ -230,7 +243,7 @@ function layoutRows(bars){
 function drawScore(){
   const svg=$('score');svg.innerHTML='';
   const ink='var(--ink)',ink2='var(--ink-2)';
-  const ts=R.song.ts,land=isLand(),N=land?2:3;UNIT=land?13:15;
+  const ts=R.song.ts,land=isLand(),N=2;UNIT=land?13:15;ROW_H=land?150:126;
   const chunks=[];for(let i=0;i<R.bars.length;i+=N)chunks.push(R.bars.slice(i,i+N));
   W=land?Math.max(420,Math.ceil(Math.max(...chunks.map(c=>c.reduce((a,b)=>a+barMin(b),0))))+CLEF_W+6):340;
   AVAIL=W-CLEF_W-6;
