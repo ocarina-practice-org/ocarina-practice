@@ -145,7 +145,7 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
     <div class="resline" id="resLine" hidden>
       <div class="verdict"><img id="resMas" class="resmas" alt=""><span id="verdict"></span></div>
       <div class="legend" id="legend">
-        <span><i style="background:var(--ruby)"></i>音準不對（偏高／偏低／錯音／漏）</span>
+        <span><i style="background:var(--ruby)"></i>音準不對（↑偏高　↓偏低　錯音　漏）</span>
         <span><i style="background:var(--amber)"></i>拍子不對（早／晚）</span>
       </div>
     </div>
@@ -310,7 +310,7 @@ function drawScore(){
         n.head=null;n.stems=[];
         n.num=el('text',{x:x,y:ty,'font-size':15,'font-weight':800,'text-anchor':'middle',fill:ink},gEl,'0');
         durMarks(n,x,ty,gEl,ink);
-        n.badge=el('text',{x:x,y:ty+22,'font-size':10.5,'font-weight':800,'text-anchor':'middle',fill:ink2},gEl,'');
+        n.badge=el('text',{x:x,y:ty+23,'font-size':13,'font-weight':800,'text-anchor':'middle',fill:ink2},gEl,'');
         n.gEl=gEl;return;
       }
       const st=stepOf(n),y=bottom-st*STEP;n.y=y;
@@ -345,7 +345,7 @@ function drawScore(){
       if(n.oct===-1)el('circle',{cx:x,cy:ty+5+nl*3.5,r:1.7,fill:ink},gEl);
       if(n.oct>=1)el('circle',{cx:x,cy:ty-15,r:1.7,fill:ink},gEl);
       if(n.oct>=2)el('circle',{cx:x,cy:ty-21,r:1.7,fill:ink},gEl);
-      n.badge=el('text',{x:x,y:ty+22,'font-size':10.5,'font-weight':800,'text-anchor':'middle',fill:ink2},gEl,'');
+      n.badge=el('text',{x:x,y:ty+23,'font-size':13,'font-weight':800,'text-anchor':'middle',fill:ink2},gEl,'');
       if(n.tieNext)ties.push(n);
     });
     jruns.forEach(r=>{
@@ -549,7 +549,7 @@ function colorOf(r){
 function badgeOf(r){
   if(r.miss)return '漏';
   let s='';
-  if(r.pitch==='high')s+='偏高';else if(r.pitch==='low')s+='偏低';else if(r.pitch==='wrong')s+='錯音';
+  if(r.pitch==='high')s+='↑';else if(r.pitch==='low')s+='↓';else if(r.pitch==='wrong')s+='錯音';
   if(r.timing==='early')s+='早';else if(r.timing==='late')s+='晚';else if(r.timing===null&&r.pitch!=='wrong')s+='?';
   if(r.short)s+='短';
   return s;
