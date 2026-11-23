@@ -45,11 +45,13 @@ function make(svc) {
   }
 
   function load() {
-    return Promise.all([all('students'), all('tasks'), all('logs'), all('adj'), sdk.getDoc(sdk.doc(db, 'settings', 'config')), sdk.getDoc(sdk.doc(db, 'pub', 'groups'))]).then(function (r) {
-      var students = r[0], tasks = r[1], logs = r[2], adjs = r[3];
+    return Promise.all([all('students'), all('tasks'), all('logs'), all('adj'), sdk.getDoc(sdk.doc(db, 'settings', 'config')), sdk.getDoc(sdk.doc(db, 'pub', 'groups')),
+                        all('plays').catch(function () { return []; })]).then(function (r) {
+      var students = r[0], tasks = r[1], logs = r[2], adjs = r[3], plays = r[6];
       var settings = OPC.cleanSettings(r[4].exists() ? r[4].data() : {});
       var today = OPC.todayDay(), ws = OPC.weekStartDay(today);
-      var lg = {}, aj = {};
+      var lg = {}, aj = {}, pl = {}, lgAll = {};
+      plays.forEach(function (p) { (pl[p.sid] = pl[p.sid] || []).push({ task: p.task, day: Number(p.day), ok: !!p.ok }); });
       logs.forEach(function (l) { (lg[l.sid] = lg[l.sid] || []).push({ task: l.task, day: Number(l.day), pct: Number(l.pct) || 100 }); });
       adjs.forEach(function (a) { (aj[a.sid] = aj[a.sid] || []).push({ delta: Number(a.delta) || 0 }); });
       var progress = {}, best = {}, elig = {}, done = {};
@@ -59,8 +61,10 @@ function make(svc) {
         c.visible.forEach(function (t) {
           var p = c.per[t.id]; elig[t.id]++; progress[t.id][s.id] = p.count; if (p.bestPct) best[t.id][s.id] = p.bestPct; if (p.done) done[t.id]++;
         });
-        return { id: s.id, name: s.name, group: s.group, points: c.points, level: c.level, total: c.total, week: c.week,
-                 lastPractice: c.lastDay ? OPC.dayToDate(c.lastDay) : '', createdAt: String(s.created || '').slice(0, 10),
+        var nDone = c.visible.filter(function (t) { return c.per[t.id].done; }).length;
+        var ps = OPC.practiceStats(pl[s.id] || [], lg[s.id] || [], today, 3, nDone);
+        return { id: s.id, name: s.name, group: s.group, total: ps.total, week: ps.weekCount, streak: ps.streak, perfect: ps.perfect,
+                 lastPractice: ps.lastDay ? OPC.dayToDate(ps.lastDay) : '', createdAt: String(s.created || '').slice(0, 10),
                  claimed: !!s.uid };
       });
       var outTasks = tasks.map(function (t) {
@@ -149,7 +153,7 @@ function make(svc) {
       return wrap(bumpGen(id).then(function () { return sdk.updateDoc(sdk.doc(db, 'students', id), { uid: null }); }));
     },
     deleteStudent: function (id) {
-      return wrap(delWhere('logs', 'sid', id).then(function () { return delWhere('adj', 'sid', id); })
+      return wrap(delWhere('logs', 'sid', id).then(function () { return delWhere('plays', 'sid', id); }).then(function () { return delWhere('adj', 'sid', id); })
         .then(function () { return delWhere('alias', 'key', id); })
         .then(function () { return sdk.deleteDoc(sdk.doc(db, 'students', id)); })
         .then(function () { return bumpGen(id); }));

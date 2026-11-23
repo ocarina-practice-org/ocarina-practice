@@ -11,7 +11,7 @@ const RANGES = { tol: [30, 90], holdMs: [300, 1500], missPct: [0, 50], timingBea
                  freeSec: [3, 20], speed1: [30, 100], speed2: [30, 100], speed3: [30, 100], clickOn: [0, 1], dailyGoal: [1, 20] };
 const LABELS = { tol: '音準容許（音分）', holdMs: '每個音要吹多久（毫秒）', missPct: '可以漏掉的音（%）',
                  timingBeats: '節奏可早晚（拍）', coverage: '每個音要吹到的比例（%）', freeSec: '自由吹奏需累積（秒）',
-                 speed1: '速度階段 1（%）', speed2: '速度階段 2（%）', speed3: '速度階段 3（%）', clickOn: '節拍聲', dailyGoal: '每日全對目標（次）' };
+                 speed1: '速度階段 1（%）', speed2: '速度階段 2（%）', speed3: '速度階段 3（%）', clickOn: '節拍聲', dailyGoal: '每日練習目標（次）' };
 const DAILY_CAP = 5;   /* 每人每項任務每天最多記幾次（firestore.rules 也限制 k ≤ 5，兩邊要一樣） */
 const LEVELS = [
   { min: 0,   name: '陶笛蛋',     icon: '🥚' },
@@ -140,6 +140,52 @@ function compute(group, tasks, logs, adjs, today) {
   return { points: points, level: level(points), per: per, total: total, week: week, lastDay: lastDay, visible: vis };
 }
 
+
+/* ---------- 練習統計與獎杯（學生頁、老師後台共用；全部由紀錄即時算出，不存資料庫）----------
+   plays：每次「有效練習」一筆 [{task,day,ok}]（吹到至少一半的音；ok＝全對）
+   logs：全對紀錄 [{task,day}]（舊版只有 logs，所以舊紀錄算成一次練習；新版全對會同時寫 play 與 log，逐 (任務,日) 去重）
+   連續天數：只算有練習的天，漏一天不中斷、連漏兩天才歸零 */
+function practiceStats(plays, logs, today, goal, tasksDone) {
+  const pc = {};
+  const cell = function (task, day) { const k = task + '|' + day; return pc[k] || (pc[k] = { day: Number(day), p: 0, ok: 0, l: 0 }); };
+  (plays || []).forEach(function (p) { const o = cell(p.task, p.day); o.p++; if (p.ok) o.ok++; });
+  (logs || []).forEach(function (l) { cell(l.task, l.day).l++; });
+  const perDay = {}; let total = 0, perfect = 0;
+  Object.keys(pc).forEach(function (k) {
+    const o = pc[k], n = o.p + Math.max(0, o.l - o.ok);
+    total += n; perfect += Math.max(o.l, o.ok); perDay[o.day] = (perDay[o.day] || 0) + n;
+  });
+  const days = Object.keys(perDay).map(Number).sort(function (a, b) { return a - b; });
+  let chain = 0, best = 0, prev = null;
+  days.forEach(function (d) { chain = (prev !== null && d - prev <= 2) ? chain + 1 : 1; if (chain > best) best = chain; prev = d; });
+  const last = days.length ? days[days.length - 1] : 0;
+  const streak = last && today - last <= 2 ? chain : 0;
+  const ws = weekStartDay(today), wk = {}, wd = {};
+  let week = 0, lastWeek = 0, weekDays = 0, bestWeekDays = 0;
+  days.forEach(function (d) {
+    const w = weekStartDay(d); wk[w] = (wk[w] || 0) + 1; if (wk[w] > bestWeekDays) bestWeekDays = wk[w];
+    if (d >= ws && d <= ws + 6) { week += perDay[d]; weekDays++; } else if (d >= ws - 7 && d <= ws - 1) lastWeek += perDay[d];
+  });
+  return { total: total, perfect: perfect, streak: streak, bestStreak: best, todayCount: perDay[today] || 0, goal: goal,
+           weekCount: week, lastWeekCount: lastWeek, weekDays: weekDays, bestWeekDays: bestWeekDays,
+           tasksDone: tasksDone || 0, lastDay: last };
+}
+/* 獎杯：每一類三階（銅、銀、金）。連續天數用「歷史最長」，拿到的獎杯不會因為中斷而消失 */
+const TROPHIES = [
+  { id: 'practice', name: '累計練習', icon: '🎼', stat: 'total', unit: '次', tiers: [25, 100, 500] },
+  { id: 'streak', name: '連續練習', icon: '🔥', stat: 'bestStreak', unit: '天', tiers: [3, 14, 60] },
+  { id: 'perfect', name: '全對', icon: '⭐', stat: 'perfect', unit: '次', tiers: [10, 50, 200] },
+  { id: 'tasks', name: '完成任務', icon: '📋', stat: 'tasksDone', unit: '個', tiers: [1, 5, 20] },
+  { id: 'week', name: '一週練滿', icon: '📅', stat: 'bestWeekDays', unit: '天', tiers: [3, 5, 7] }
+];
+const TIER_NAMES = ['銅', '銀', '金'];
+function trophies(st) {
+  return TROPHIES.map(function (t) {
+    const v = Number(st[t.stat]) || 0; let tier = 0;
+    t.tiers.forEach(function (m, i) { if (v >= m) tier = i + 1; });
+    return { id: t.id, name: t.name, icon: t.icon, unit: t.unit, tiers: t.tiers, value: v, tier: tier, next: tier < 3 ? t.tiers[tier] : null };
+  });
+}
 
 /*JUDGE-START*/
 /* ====== 收音判定（純計算，不碰畫面）====== */
@@ -283,7 +329,7 @@ g.OPC = {
   cleanSettings: cleanSettings, speeds: speeds,
   todayDay: todayDay, dayToDate: dayToDate, dateToDay: dateToDay, weekStartDay: weekStartDay, validDate: validDate,
   parseNotes: parseNotes, safeNotes: safeNotes, notesStr: notesStr, cleanTask: cleanTask,
-  level: level, compute: compute,
+  level: level, compute: compute, practiceStats: practiceStats, trophies: trophies, TROPHIES: TROPHIES, TIER_NAMES: TIER_NAMES,
   SEMI: SEMI, NAMES: NAMES, NUMS: NUMS, C5: C5, freqOf: freqOf, centsBetween: centsBetween,
   detectPitch: detectPitch, Judge: Judge
 };

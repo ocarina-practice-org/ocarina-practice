@@ -71,6 +71,13 @@ label{display:block;font-weight:700;margin:12px 0 4px}
 .goal .gl{display:flex;justify-content:space-between;font-weight:900}
 .bar.ok>i{background:var(--orange)}
 .hero .stats{margin-top:10px}
+.trophies{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tro{border:3px solid var(--grey);border-radius:16px;padding:8px 4px;text-align:center;background:#fff}
+.tro .ic{font-size:1.5rem;line-height:1.1}
+.tro .medal{font-size:1.2rem;line-height:1.2}
+.tro .tn{font-weight:900;font-size:.95rem}
+.tro.t0 .ic{filter:grayscale(1);opacity:.35}
+.tro.t1{border-color:#cd7f32}.tro.t2{border-color:#a9b2c0}.tro.t3{border-color:#e8b923;background:#fffbea}
 .celeb{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#fcf3dd;border:3px solid var(--ink);border-radius:22px;box-shadow:4px 4px 0 var(--ink);padding:8px 20px 8px 10px;display:flex;gap:10px;align-items:center;z-index:80;animation:pop .25s ease-out;width:max-content;max-width:92vw}
 .celeb .mas{width:78px}
 .celeb b{font-size:1.2rem}
@@ -93,10 +100,10 @@ label{display:block;font-weight:700;margin:12px 0 4px}
 <body>
 <div id="app"></div>
 <datalist id="groupList"></datalist>
-<script src="core.js?v=3"></script>
+<script src="core.js?v=4"></script>
 <script src="firebase-config.js"></script>
 <script src="student-auth.js"></script>
-<script src="student-data.js"></script>
+<script src="student-data.js?v=2"></script>
 <script>
 const { SEMI, NAMES, NUMS, C5, freqOf, centsBetween, detectPitch, Judge, parseNotes } = OPC;
 const $app = document.getElementById('app');
@@ -116,7 +123,7 @@ let S = { me: null, login: { name: ls.get('op_name') || '', group: ls.get('op_gr
 async function api(action, data){
   if (!DATA) throw new Error('請重新登入');
   if (action === 'me') return { me: await DATA.me() };
-  if (action === 'practice') return await DATA.practice(data.taskId, data.pct);
+  if (action === 'practice') return await DATA.practice(data.taskId, data.pct, data.ok);
   throw new Error('未知的動作');
 }
 /* ---------- 慶祝效果 ---------- */
@@ -177,7 +184,7 @@ function viewLogin(){
       <input id="fGroup" list="groupList" value="${esc(L.group)}" placeholder="例如：鳳山分校" autocomplete="off">
       <label>${cre ? '設定你的密碼（至少 4 個字，自己記好）' : '密碼'}</label>
       <input id="fPw" type="password" value="${esc(L.pw)}" placeholder="${cre ? '自己設一個密碼' : '你的密碼'}" autocomplete="off">
-      ${cre ? '<label style="display:flex;gap:10px;align-items:flex-start;font-weight:700"><input id="fAck" type="checkbox" style="width:26px;height:26px;flex:none" ' + (L.ack ? 'checked' : '') + '><span>我已經告訴爸爸媽媽，我要在家用麥克風練習陶笛</span></label><div class="warn">老師重設過密碼的同學，也是選這裡，用<b>同樣的姓名和分部</b>設新密碼，積分都還在。</div>' : ''}
+      ${cre ? '<label style="display:flex;gap:10px;align-items:flex-start;font-weight:700"><input id="fAck" type="checkbox" style="width:26px;height:26px;flex:none" ' + (L.ack ? 'checked' : '') + '><span>我已經告訴爸爸媽媽，我要在家用麥克風練習陶笛</span></label><div class="warn">老師重設過密碼的同學，也是選這裡，用<b>同樣的姓名和分部</b>設新密碼，之前的練習紀錄都還在。</div>' : ''}
       ${L.err ? '<div class="err">' + esc(L.err) + '</div>' : ''}
       <div style="margin-top:14px">
         <button class="btn ${cre ? 'green' : ''} big" data-act="${cre ? 'register' : 'login'}" ${L.busy ? 'disabled' : ''}>${L.busy ? '請稍等…' : cre ? '建立帳號並進入' : '進入 🎶'}</button>
@@ -231,16 +238,15 @@ function dots(t){
 }
 
 function taskCard(t, m){
-  const cap = m.dailyCap, full = t.todayCount >= cap;
   return `<div class="card task ${t.done ? 'done' : ''}">
     <div class="ttl">${esc(t.title)}</div>
     ${t.note ? `<div class="note">${esc(t.note)}</div>` : ''}
     <div class="mini">🎼 樂譜練習　·　${esc(t.startDate.slice(5))} ～ ${esc(t.endDate.slice(5))}</div>
     ${dots(t)}
-    <div class="mini" style="margin-bottom:10px">${t.count} / ${t.target} 次　·　完成可得 ${t.points} 分${!t.done ? `　·　今天已記 ${t.todayCount}/${cap}` : ''}</div>
+    <div class="mini" style="margin-bottom:10px">全對 ${t.count} / ${t.target} 次　·　這個任務已練習 ${t.practiced} 次</div>
     ${t.done ? '<span class="badge">🌟 已完成！</span>'
       : t.status === 'current'
-        ? (t.song ? `<button class="btn big" data-act="song" data-id="${esc(t.id)}" ${full ? 'disabled' : ''}>${full ? '今天記滿囉，明天再來' : '🎼 樂譜練習'}</button>` : '<span class="mini">這個任務還沒有樂譜</span>')
+        ? (t.song ? `<button class="btn big" data-act="song" data-id="${esc(t.id)}">🎼 樂譜練習</button>` : '<span class="mini">這個任務目前不能在手機上練習</span>')
         : '<span class="mini">這個任務已經結束</span>'}
   </div>`;
 }
@@ -250,27 +256,37 @@ function masImg(n, alt){ return `<img class="mas" src="${MAS(n)}" alt="${esc(alt
 /* 精靈依狀態換動作與說的話（12 揮手、14 開心、6 跑步、4 趴著睡） */
 function heroSay(m){
   const s = m.stats;
-  if (!s.total) return { pose: 12, say: '歡迎！先挑一個任務，吹到全對一次就會記下來。', sub: '' };
-  if (s.todayCount >= s.goal) return { pose: 14, say: '今天的目標達成了！', sub: '想再練也可以，每個任務一天最多記 ' + m.dailyCap + ' 次。' };
-  if (s.todayCount > 0) return { pose: 6, say: '再 ' + (s.goal - s.todayCount) + ' 次全對就達標了。', sub: '今天已經全對 ' + s.todayCount + ' 次。' };
+  if (!s.total) return { pose: 12, say: '歡迎！先挑一個任務，吹完一遍就算一次練習。', sub: '' };
+  if (s.todayCount >= s.goal) return { pose: 14, say: '今天的目標達成了！', sub: '想再練也可以，多練的都會累計。' };
+  if (s.todayCount > 0) return { pose: 6, say: '再練 ' + (s.goal - s.todayCount) + ' 次就達標了。', sub: '今天已經練習 ' + s.todayCount + ' 次。' };
   if (s.streak > 0) return { pose: 12, say: '今天還沒練習，來吹一首吧。', sub: '已連續 ' + s.streak + ' 天，今天吹一次就能接著算。' };
-  return { pose: 4, say: '好久不見，從一小段開始吧。', sub: '吹到全對一次，連續天數就重新開始。' };
+  return { pose: 4, say: '好久不見，從一小段開始吧。', sub: '吹完一遍，連續天數就重新開始。' };
 }
 function heroHtml(m){
   const s = m.stats, h = heroSay(m), pct = Math.min(100, Math.round(s.todayCount / s.goal * 100));
   const diff = s.weekCount - s.lastWeekCount;
-  const cmp = !s.total ? '' : diff > 0 ? '比上週多了 ' + diff + ' 次，繼續保持。' : diff < 0 ? '上週全對 ' + s.lastWeekCount + ' 次。' : s.weekCount ? '和上週一樣多。' : '';
+  const cmp = !s.total ? '' : diff > 0 ? '比上週多練了 ' + diff + ' 次，繼續保持。' : diff < 0 ? '上週練習 ' + s.lastWeekCount + ' 次。' : s.weekCount ? '和上週一樣多。' : '';
   return `<div class="card hero">
     <div class="heroTop">${masImg(h.pose)}
       <div><div class="streak ${s.streak ? '' : 'off'}">🔥 連續 ${s.streak} 天</div>
         <div class="say">${esc(h.say)}</div>${h.sub ? `<div class="mini">${esc(h.sub)}</div>` : ''}</div></div>
-    <div class="goal"><div class="gl"><span>今日目標</span><span>${Math.min(s.todayCount, s.goal)} / ${s.goal} 次全對</span></div>
+    <div class="goal"><div class="gl"><span>今日目標</span><span>${Math.min(s.todayCount, s.goal)} / ${s.goal} 次練習</span></div>
       <div class="bar ${s.todayCount >= s.goal ? 'ok' : ''}"><i style="width:${pct}%"></i></div></div>
-    <div class="stats"><div class="stat"><b>${s.total}</b><span class="mini">累計全對</span></div>
-      <div class="stat"><b>${s.weekCount}</b><span class="mini">本週全對</span></div>
-      <div class="stat"><b>${s.weekDays}</b><span class="mini">練習天數</span></div></div>
-    <div class="mini" style="margin-top:8px">${esc(cmp)}${cmp ? '　' : ''}積分 ${m.points}</div>
+    <div class="stats"><div class="stat"><b>${s.total}</b><span class="mini">累計練習</span></div>
+      <div class="stat"><b>${s.weekCount}</b><span class="mini">本週練習</span></div>
+      <div class="stat"><b>${s.perfect}</b><span class="mini">全對次數</span></div></div>
+    ${cmp ? `<div class="mini" style="margin-top:8px">${esc(cmp)}</div>` : ''}
   </div>`;
+}
+/* 獎杯櫃：每一類三階（銅、銀、金）；沒拿到的顯示成灰色，並寫出距離下一階還差多少 */
+const MEDAL = ['', '🥉', '🥈', '🥇'], TIERN = OPC.TIER_NAMES;
+function trophyHtml(m){
+  const items = (m.trophies || []).map(t => {
+    const prog = t.next ? `${t.value} / ${t.next} ${t.unit}` : '已達最高階';
+    return `<div class="tro t${t.tier}"><div class="ic">${t.icon}</div><div class="medal">${t.tier ? MEDAL[t.tier] : '🔒'}</div>
+      <div class="tn">${esc(t.name)}</div><div class="mini">${esc(prog)}</div></div>`;
+  }).join('');
+  return `<h2>🏆 獎杯</h2><div class="card"><div class="trophies">${items}</div></div>`;
 }
 
 function viewStudent(){
@@ -281,35 +297,42 @@ function viewStudent(){
     ${heroHtml(m)}
     <h2>📋 這週的練習任務</h2>
     ${cur.length ? cur.map(t => taskCard(t, m)).join('') : '<div class="card">這週老師還沒有派任務，先好好休息 ☺️</div>'}
-    ${past.length ? `<button class="link" data-act="togglePast">${S.showPast ? '▼ 收起' : '▶ 看以前的任務'}（${past.length}）</button>${S.showPast ? past.map(t => taskCard(t, m)).join('') : ''}` : ''}`;
+    ${past.length ? `<button class="link" data-act="togglePast">${S.showPast ? '▼ 收起' : '▶ 看以前的任務'}（${past.length}）</button>${S.showPast ? past.map(t => taskCard(t, m)).join('') : ''}` : ''}
+    ${trophyHtml(m)}`;
 }
 
-/* 過關後的小慶祝：精靈＋一句話（取代原本的文字彈跳） */
-function celebrate(pose, title, sub){
+/* 過關後的小慶祝：精靈＋一句話。樂譜練習視窗開著時先排隊，關掉後再顯示，不擋住按鈕 */
+function showCelebration(c){
   const old = document.querySelector('.celeb'); if (old) old.remove();
   const el = document.createElement('div'); el.className = 'celeb';
-  el.innerHTML = masImg(pose) + `<div><b>${esc(title)}</b>${sub ? `<div class="mini">${esc(sub)}</div>` : ''}</div>`;
-  document.body.appendChild(el); setTimeout(() => el.remove(), 3000);
+  el.innerHTML = masImg(c.pose) + `<div><b>${esc(c.title)}</b>${c.sub ? `<div class="mini">${esc(c.sub)}</div>` : ''}</div>`;
+  document.body.appendChild(el); setTimeout(() => el.remove(), 3200);
+  if (c.confetti) confetti();
 }
-const TOTAL_MS = [10, 25, 50, 100, 150, 200, 300, 500, 750, 1000], STREAK_MS = [3, 7, 14, 30, 60, 100];
+function celebrate(c){
+  if (document.getElementById('songModal')) { if (!S.pending || c.prio >= S.pending.prio) S.pending = c; return; }
+  showCelebration(c);
+}
 function pickCelebration(prev, j){
-  const a = prev || { total: 0, streak: 0, todayCount: 0, goal: 3 }, b = j.me.stats;
-  if (j.awarded) return [14, '任務完成！', '+' + j.awarded + ' 分'];
-  const tm = TOTAL_MS.filter(x => a.total < x && b.total >= x).pop();
-  if (tm) return [7, '累計全對 ' + tm + ' 次！', '你的穩定度一直在進步。'];
-  const sm = STREAK_MS.filter(x => a.streak < x && b.streak >= x).pop();
-  if (sm) return [7, '連續練習 ' + sm + ' 天！', '持續練習最有效。'];
-  if (a.todayCount < b.goal && b.todayCount >= b.goal) return [14, '今天的目標達成！', '累計全對 ' + b.total + ' 次'];
-  return [2, '全對！', '今天第 ' + b.todayCount + ' 次，累計 ' + b.total + ' 次'];
+  const b = j.me.stats, ok = j.ok;
+  /* 優先順序：新獎杯 > 任務完成 > 今日目標達成 > 一般 */
+  const a = (prev && prev.trophies) || [], nw = j.me.trophies || [];
+  const got = nw.filter((t, i) => a[i] && t.tier > a[i].tier).pop();
+  if (got) return { prio: 4, pose: 7, title: '獲得獎杯：' + got.name + '（' + TIERN[got.tier - 1] + '）', sub: '你的努力有看到。', confetti: true };
+  if (j.completed) return { prio: 3, pose: 14, title: '任務完成！', sub: '全對 ' + b.perfect + ' 次，累計練習 ' + b.total + ' 次', confetti: true };
+  const pv = prev && prev.stats;
+  if (pv && pv.todayCount < b.goal && b.todayCount >= b.goal) return { prio: 2, pose: 14, title: '今天的目標達成！', sub: '累計練習 ' + b.total + ' 次', confetti: true };
+  return ok ? { prio: 1, pose: 2, title: '全對！', sub: '今天第 ' + b.todayCount + ' 次，累計 ' + b.total + ' 次', confetti: false }
+            : { prio: 1, pose: 16, title: '練習 +1', sub: '今天第 ' + b.todayCount + ' 次，累計 ' + b.total + ' 次', confetti: false };
 }
 
-async function submitPractice(id, pct){
+async function submitPractice(id, pct, ok){
   if (S.busy) return; S.busy = true;
   try {
-    const prev = S.me && S.me.stats;
-    const j = await api('practice', { token: S.token, taskId: id, pct: pct });
-    S.me = j.me; viewStudent();
-    const c = pickCelebration(prev, j); celebrate(c[0], c[1], c[2]); confetti();
+    const prev = S.me && { stats: S.me.stats, trophies: S.me.trophies };
+    const j = await api('practice', { token: S.token, taskId: id, pct: pct, ok: !!ok });
+    j.ok = !!ok; S.me = j.me; viewStudent();
+    celebrate(pickCelebration(prev, j));
   } catch(e){ toast(e.message, 2800); if (/重新登入/.test(e.message)) { S.me = null; viewLogin(); } }
   S.busy = false;
 }
@@ -326,15 +349,18 @@ function openSong(id){
     <iframe src="song.html?${q.toString()}" title="樂譜練習" style="border:0;width:100%;height:100%"></iframe></div>`;
   document.body.appendChild(el);
 }
-function closeSong(){ const el = document.getElementById('songModal'); if (el) el.remove(); }
+function closeSong(){
+  const el = document.getElementById('songModal'); if (el) el.remove();
+  if (S.pending) { const c = S.pending; S.pending = null; setTimeout(() => showCelebration(c), 250); }
+}
 
 /* 樂譜練習每吹完一次：全對才送出一筆紀錄（同練習面板的規則） */
 window.addEventListener('message', ev => {
   const d = ev.data || {};
   if (d.src === 'song-practice' && d.type === 'close') { closeSong(); return; }
-  if (d.src !== 'song-practice' || d.type !== 'songLog' || !d.perfect) return;
+  if (d.src !== 'song-practice' || d.type !== 'songLog') return;   /* 樂譜頁只在「有效練習」（吹到至少一半）才送；不管有沒有全對都算一次練習 */
   if (S.busy || !S.me) return;
-  submitPractice(String(d.task), 100);
+  submitPractice(String(d.task), 100, !!d.perfect);
 });
 
 /* ====================== 收音面板 ====================== */

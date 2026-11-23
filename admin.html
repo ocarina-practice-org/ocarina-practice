@@ -95,12 +95,12 @@ input,select{border:1px solid #cfc4b0;border-radius:10px;font-family:inherit}
 <body>
 <div id="app"></div>
 <datalist id="groupList"></datalist>
-<script src="core.js?v=3"></script>
+<script src="core.js?v=4"></script>
 <script src="songs.js?v=10"></script>
 <script src="gloria-songs.js?v=3"></script>
 <script src="firebase-config.js"></script>
 <script src="student-auth.js"></script>
-<script src="admin-data.js"></script>
+<script src="admin-data.js?v=2"></script>
 <script>
 const $app = document.getElementById('app');
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -212,10 +212,10 @@ function adminStudents(){
       <button class="chip" data-act="renameGroup">✏️ 合併／改分部名稱</button>
     </div>
     <div class="card scroll" style="padding:8px"><table class="tbl">
-      <tr><th>姓名</th><th>分部</th><th>等級</th><th>積分</th><th>本週</th><th>累計</th><th>最近練習</th><th></th></tr>
+      <tr><th>姓名</th><th>分部</th><th>本週練習</th><th>累計練習</th><th>全對</th><th>連續天數</th><th>最近練習</th><th></th></tr>
       ${list.length ? list.map(s => `<tr>
-        <td><b>${esc(s.name)}</b></td><td>${esc(s.group)}</td><td>${s.level.icon} Lv.${s.level.index}</td><td>${s.points}</td>
-        <td class="${s.week === 0 ? 'idle' : ''}">${s.week}</td><td>${s.total}</td><td>${esc(shortDate(s.lastPractice))}</td>
+        <td><b>${esc(s.name)}</b></td><td>${esc(s.group)}</td>
+        <td class="${s.week === 0 ? 'idle' : ''}">${s.week}</td><td>${s.total}</td><td>${s.perfect}</td><td>${s.streak}</td><td>${esc(shortDate(s.lastPractice))}</td>
         <td style="white-space:nowrap"><button class="btn small" data-act="stuMenu" data-id="${esc(s.id)}">管理</button></td></tr>`).join('')
         : '<tr><td colspan="8" class="mini">沒有符合的學生</td></tr>'}
     </table></div>`;
@@ -265,7 +265,8 @@ function taskForm(){
     <div class="row2"><div><label>從第幾小節</label><input id="tFrom" type="number" min="1" value="${esc(e.from || '')}"></div><div><label>到第幾小節</label><input id="tTo" type="number" min="1" value="${esc(e.to || '')}"></div></div>
     <label>任務名稱（留空＝自動用歌曲名稱）</label><input id="tTitle" value="${esc(e.title)}">
     <label>指派給（填「全部」或某個分部）</label><input id="tGroup" list="groupList" value="${esc(e.group)}" placeholder="全部">
-    <div class="row2"><div><label>需過關幾次</label><input id="tTarget" type="number" min="1" max="50" value="${esc(e.target)}"></div><div><label>完成得幾分</label><input id="tPoints" type="number" min="0" max="100" value="${esc(e.points)}"></div></div>
+    <label>全對幾次算完成任務</label><input id="tTarget" type="number" min="1" max="50" value="${esc(e.target)}">
+    <input type="hidden" id="tPoints" value="${esc(e.points || 0)}">
     <div class="row2"><div><label>開始日</label><input id="tStart" type="date" value="${esc(e.startDate)}"></div><div><label>結束日</label><input id="tEnd" type="date" value="${esc(e.endDate)}"></div></div>
     <input type="hidden" id="tNote" value=""><input type="hidden" id="tNotes" value="${esc(e.notes || '')}"><input type="hidden" id="tBpm" value="">
     ${A.err ? '<div class="err">' + esc(A.err) + '</div>' : ''}
@@ -282,7 +283,7 @@ function adminTasks(){
     const songLabel = t.song && SONGS[t.song] ? SONGS[t.song].title + '　第 ' + t.from + '–' + t.to + ' 小節' : '（沒有樂譜）';
     return `<div class="card">
       <div class="top"><div><b style="font-size:1.1rem">${esc(t.title)}</b> ${cur ? '<span class="badge" style="font-size:.8rem;padding:1px 10px">進行中</span>' : ''}
-      <div class="mini">${esc(t.group === '全部' ? '全部分部' : t.group)}　·　${esc(shortDate(t.startDate))}～${esc(shortDate(t.endDate))}　·　過關 ${t.target} 次　·　${t.points} 分</div>
+      <div class="mini">${esc(t.group === '全部' ? '全部分部' : t.group)}　·　${esc(shortDate(t.startDate))}～${esc(shortDate(t.endDate))}　·　全對 ${t.target} 次完成</div>
       <div class="mini">🎼 ${esc(songLabel)}</div></div>
       <div style="text-align:right"><b style="font-size:1.4rem">${t.done}/${t.eligible}</b><div class="mini">完成人數</div></div></div>
       <div style="margin-top:8px"><button class="btn small" data-act="toggleTask" data-id="${esc(t.id)}">${open ? '收起進度' : '看每人進度'}</button>
@@ -306,7 +307,7 @@ const HELP = {
   coverage: '跟拍模式：每個音要吹到它長度的幾 % 才算。越小越寬',
   freeSec: '自由吹奏：要累積吹出穩定聲音幾秒',
   speed1: '三個速度階段（原速的幾 %），學生可選擇；預設 100／90／80',
-  dailyGoal: '學生頁的「今日目標」：每天全對幾次算達標（預設 3）。純粹是鼓勵用的進度條，不影響積分',
+  dailyGoal: '學生頁的「今日目標」：每天練習幾次算達標（預設 3），只是鼓勵用的進度條',
   speed2: '', speed3: '', clickOn: '跟拍時是否播放節拍聲（建議戴耳機）'
 };
 function adminSettings(){
@@ -340,13 +341,12 @@ function stuMenu(id){
   const s = A.data.students.find(x => x.id === id); if (!s) return;
   const m = document.createElement('div'); m.className = 'modal';
   m.innerHTML = `<div class="card"><h2 style="margin-top:0">${esc(s.name)}（${esc(s.group)}）</h2>
-    <p class="mini">積分 ${s.points}　·　累計 ${s.total} 次${s.claimed ? '' : '　·　⏳ 等學生重新設定密碼'}</p>
-    <div style="display:grid;gap:10px"><button class="btn blue" id="b1">重設密碼</button><button class="btn" id="b2">加減積分</button><button class="btn red" id="b3">刪除這位學生</button><button class="link" id="b4">關閉</button></div></div>`;
+    <p class="mini">累計練習 ${s.total} 次　·　全對 ${s.perfect} 次　·　連續 ${s.streak} 天${s.claimed ? '' : '　·　⏳ 等學生重新設定密碼'}</p>
+    <div style="display:grid;gap:10px"><button class="btn blue" id="b1">重設密碼</button><button class="btn red" id="b3">刪除這位學生</button><button class="link" id="b4">關閉</button></div></div>`;
   document.body.appendChild(m);
   m.querySelector('#b4').onclick = () => m.remove();
-  m.querySelector('#b1').onclick = () => { m.remove(); modal('重設「' + s.name + '」的密碼', '<p>按下去之後，舊密碼立刻失效。請學生在登入頁選「第一次來」，用<b>同樣的姓名和分部</b>設定一個新密碼，之前的積分和進度都會保留。</p>', '確定重設', async () => { await api('resetPassword', { id: s.id }); await loadAdmin(); toast('已重設，請告訴學生重新設定密碼', 2800); }); };
-  m.querySelector('#b2').onclick = () => { m.remove(); modal('加減積分', '<label>加減多少分（扣分請填負數）</label><input id="mv" type="number"><label>原因（選填）</label><input id="mr" type="text">', '確定', async mm => { await api('adjustPoints', { token: A.token, id: s.id, delta: mm.querySelector('#mv').value, reason: mm.querySelector('#mr').value }); await loadAdmin(); }); };
-  m.querySelector('#b3').onclick = () => { m.remove(); modal('刪除學生', '<p>確定要刪除 <b>' + esc(s.name) + '</b> 嗎？他的練習紀錄和加減分也會一起刪除，無法復原。</p>', '確定刪除', async () => { await api('deleteStudent', { token: A.token, id: s.id }); await loadAdmin(); }); };
+  m.querySelector('#b1').onclick = () => { m.remove(); modal('重設「' + s.name + '」的密碼', '<p>按下去之後，舊密碼立刻失效。請學生在登入頁選「第一次來」，用<b>同樣的姓名和分部</b>設定一個新密碼，之前的練習紀錄和進度都會保留。</p>', '確定重設', async () => { await api('resetPassword', { id: s.id }); await loadAdmin(); toast('已重設，請告訴學生重新設定密碼', 2800); }); };
+  m.querySelector('#b3').onclick = () => { m.remove(); modal('刪除學生', '<p>確定要刪除 <b>' + esc(s.name) + '</b> 嗎？他的練習紀錄也會一起刪除，無法復原。</p>', '確定刪除', async () => { await api('deleteStudent', { token: A.token, id: s.id }); await loadAdmin(); }); };
 }
 
 function readTaskForm(){
@@ -388,7 +388,7 @@ document.addEventListener('click', async ev => {
       return modal('合併／改分部名稱', '<p class="mini">學生自己填分部，難免有人打成不一樣（例如「鳳山」和「鳳山分校」）。把舊名稱的學生和任務全部改成新名稱。學生用新的或舊的分部名稱都可以登入。</p><label>原本的分部</label><input id="rf" list="groupList"><label>改成</label><input id="rt" list="groupList">', '改名',
         async mm => { const r = await api('renameGroup', { token: A.token, from: mm.querySelector('#rf').value, to: mm.querySelector('#rt').value }); A.group = ''; await loadAdmin(); toast('已更新 ' + r.moved + ' 位學生', 2200); });
     case 'stuMenu': return stuMenu(id);
-    case 'newTask': { const ws = A.data.weekStart; A.err = ''; A.edit = { id: '', title: '', note: '', group: '全部', target: 5, points: 10, startDate: ws, endDate: shiftDate(ws, 6), notes: '', bpm: '' }; return viewAdmin(); }
+    case 'newTask': { const ws = A.data.weekStart; A.err = ''; A.edit = { id: '', title: '', note: '', group: '全部', target: 5, points: 0, startDate: ws, endDate: shiftDate(ws, 6), notes: '', bpm: '' }; return viewAdmin(); }
     case 'cancelTask': A.edit = null; A.err = ''; return viewAdmin();
     case 'editTask': { const t = A.data.tasks.find(x => x.id === id); A.err = ''; A.edit = Object.assign({}, t); return viewAdmin(); }
     case 'preset': { document.getElementById('tNotes').value = v; return; }
@@ -422,7 +422,7 @@ document.addEventListener('click', async ev => {
     }
     case 'toggleTask': A.open = A.open === id ? null : id; return viewAdmin();
     case 'delTask': { const t = A.data.tasks.find(x => x.id === id);
-      return modal('刪除任務', '<p>確定刪除「' + esc(t.title) + '」嗎？注意：學生在這個任務得到的積分也會一起消失（練習紀錄不會刪）。</p>', '確定刪除', async () => { await api('deleteTask', { token: A.token, id: id }); await loadAdmin(); }); }
+      return modal('刪除任務', '<p>確定刪除「' + esc(t.title) + '」嗎？注意：學生在這個任務的全對進度也會一起消失（練習紀錄不會刪）。</p>', '確定刪除', async () => { await api('deleteTask', { token: A.token, id: id }); await loadAdmin(); }); }
     case 'copyLast': return copyLast();
     case 'setPreset': {
       const p = v === 'normal' ? A.data.defaults : PRESETS[v];

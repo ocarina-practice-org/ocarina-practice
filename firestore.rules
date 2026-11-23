@@ -12,7 +12,9 @@ rules_version = '2';
 //   settings/config 放寬設定；已登入者能讀，只有管理者能寫
 //   logs/{id}       每次過關一筆；id＝<學生key>_<任務id>_<第幾天>_<第幾次>，只能新增、不能改不能刪，
 //                   同一人同一任務同一天最多 5 筆（id 的最後一碼 k ≤ 5，同一個 id 只能建立一次）；學生只能讀自己的
-//   adj/{id}        老師手動加減積分；學生能讀自己的，只有管理者能寫
+//   plays/{id}      每次「有效練習」一筆（吹到至少一半的音，不管有沒有全對）；id＝<學生key>_<任務id>_<第幾天>_<第幾次>，
+//                   只能新增、不能改不能刪，同一人同一任務同一天最多 20 筆；ok＝這次是否全對；學生只能讀自己的
+//   adj/{id}        （舊）老師手動加減積分；已不使用，保留資料；學生能讀自己的，只有管理者能寫
 //
 // 學生帳號的 email 是「<key>[-世代]@op-students.example.com」，所以 key 可以從 email 取出，用來限制「只能寫自己的」。
 // 老師另外用一般的 Email／密碼帳號登入（不是學生網域）。
@@ -110,7 +112,28 @@ service cloud.firestore {
         && myDoc().data.get('uid', null) == request.auth.uid;
     }
 
-    // ---- 老師手動加減積分：學生只能讀自己的 ----
+    // ---- 每次有效練習：只能新增自己的，欄位固定，不能改不能刪（用來算累計、連續天數、獎杯）----
+    match /plays/{id} {
+      allow get, list: if isStudentAcct() && resource.data.sid == myKey();
+      allow create: if isStudentAcct()
+        && request.resource.data.keys().hasOnly(['sid', 'task', 'day', 'k', 'ok', 'pct', 'ts'])
+        && request.resource.data.sid == myKey()
+        && request.resource.data.task is string
+        && request.resource.data.task.size() >= 1 && request.resource.data.task.size() <= 40
+        && request.resource.data.day is int
+        && request.resource.data.day == dayNow()
+        && request.resource.data.k is int
+        && request.resource.data.k >= 1 && request.resource.data.k <= 20
+        && request.resource.data.ok is bool
+        && request.resource.data.pct is int
+        && request.resource.data.pct >= 30 && request.resource.data.pct <= 100
+        && request.resource.data.ts == request.time
+        && id == myKey() + '_' + request.resource.data.task + '_' + string(request.resource.data.day) + '_' + string(request.resource.data.k)
+        && exists(/databases/$(database)/documents/tasks/$(request.resource.data.task))
+        && myDoc().data.get('uid', null) == request.auth.uid;
+    }
+
+    // ---- 老師手動加減積分（已不使用）：學生只能讀自己的 ----
     match /adj/{id} {
       allow get, list: if isStudentAcct() && resource.data.sid == myKey();
     }

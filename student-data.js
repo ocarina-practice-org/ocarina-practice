@@ -9,34 +9,25 @@ function isDenied(e) { return !!e && (e.code === 'permission-denied' || e.code =
 function dateOf(s) { return String(s || ''); }
 
 function make(svc, who) {
-  var sdk = svc.sdk, db = svc.db, C = null;     // C：快取 {tasks, settings, logs, adjs}
+  var sdk = svc.sdk, db = svc.db, C = null;     // C：快取 {tasks, settings, logs, plays, adjs}
 
   function load() {
     return Promise.all([
       sdk.getDocs(sdk.collection(db, 'tasks')),
       sdk.getDoc(sdk.doc(db, 'settings', 'config')).catch(function () { return null; }),
       sdk.getDocs(sdk.query(sdk.collection(db, 'logs'), sdk.where('sid', '==', who.sid))),
-      sdk.getDocs(sdk.query(sdk.collection(db, 'adj'), sdk.where('sid', '==', who.sid)))
+      sdk.getDocs(sdk.query(sdk.collection(db, 'adj'), sdk.where('sid', '==', who.sid))),
+      /* 每次有效練習；規則還沒發佈或讀不到時當作沒有（只會少算，不會壞掉） */
+      sdk.getDocs(sdk.query(sdk.collection(db, 'plays'), sdk.where('sid', '==', who.sid))).catch(function () { return { forEach: function () {} }; })
     ]).then(function (r) {
       var tasks = [], logs = [], adjs = [];
       r[0].forEach(function (d) { var x = d.data(); x.id = d.id; tasks.push(x); });
       r[2].forEach(function (d) { var x = d.data(); logs.push({ task: x.task, day: Number(x.day), k: Number(x.k), pct: Number(x.pct) || 100 }); });
       r[3].forEach(function (d) { adjs.push({ delta: Number(d.data().delta) || 0 }); });
-      C = { tasks: tasks, settings: OPC.cleanSettings(r[1] && r[1].exists() ? r[1].data() : {}), logs: logs, adjs: adjs };
+      var plays = [];
+      r[4].forEach(function (d) { var x = d.data(); plays.push({ task: x.task, day: Number(x.day), k: Number(x.k), ok: !!x.ok }); });
+      C = { tasks: tasks, settings: OPC.cleanSettings(r[1] && r[1].exists() ? r[1].data() : {}), logs: logs, plays: plays, adjs: adjs };
     }, function (e) { throw E(isDenied(e) ? '請重新登入' : '連不上資料庫，請檢查網路再試一次', isDenied(e) ? 'denied' : 'net'); });
-  }
-
-  /* 鼓勵用的統計：全部由練習紀錄算出，不存資料庫。連續天數：只算有練習的天，漏一天不中斷、連漏兩天才歸零 */
-  function stats(today, goal) {
-    var days = {}, total = C.logs.length, tc = 0, wk = 0, lw = 0, wd = {}, ws = OPC.weekStartDay(today);
-    C.logs.forEach(function (l) {
-      var d = Number(l.day); days[d] = 1;
-      if (d === today) tc++;
-      if (d >= ws && d <= ws + 6) { wk++; wd[d] = 1; } else if (d >= ws - 7 && d <= ws - 1) lw++;
-    });
-    var ds = Object.keys(days).map(Number).sort(function (a, b) { return b - a; }), streak = 0;
-    if (ds.length && today - ds[0] <= 2) { streak = 1; for (var i = 1; i < ds.length; i++) { if (ds[i - 1] - ds[i] <= 2) streak++; else break; } }
-    return { total: total, streak: streak, todayCount: tc, goal: goal, weekCount: wk, lastWeekCount: lw, weekDays: Object.keys(wd).length };
   }
 
   function build() {
@@ -45,16 +36,20 @@ function make(svc, who) {
     var tasks = comp.visible.filter(function (t) {
       return OPC.dateToDay(t.startDate) <= today && OPC.dateToDay(t.endDate) >= today - 14;
     }).sort(function (a, b) { return a.startDate < b.startDate ? 1 : a.startDate > b.startDate ? -1 : 0; }).map(function (t) {
-      var p = comp.per[t.id];
+      var p = comp.per[t.id], pl = C.plays.filter(function (x) { return x.task === t.id; }), okN = pl.filter(function (x) { return x.ok; }).length,
+          lgN = C.logs.filter(function (x) { return x.task === t.id; }).length;
       return { id: t.id, title: t.title, note: t.note || '', target: t.target, points: t.points,
                notes: OPC.safeNotes(t.notes), bpm: Number(t.bpm) || 0, bestPct: p.bestPct,
                song: t.song || '', from: Number(t.from) || 0, to: Number(t.to) || 0,
                startDate: dateOf(t.startDate), endDate: dateOf(t.endDate),
                status: OPC.dateToDay(t.endDate) >= today ? 'current' : 'past',
-               count: Math.min(p.count, t.target), done: p.done, todayCount: p.todayCount };
+               count: Math.min(p.count, t.target), done: p.done, todayCount: p.todayCount,
+               practiced: pl.length + Math.max(0, lgN - okN) };
     });
-    return { id: who.sid, name: who.name, group: who.group, points: comp.points, level: comp.level, tasks: tasks,
-             stats: stats(today, Math.round(st.dailyGoal) || 3),
+    var tasksDone = comp.visible.filter(function (t) { return comp.per[t.id].done; }).length;
+    var stats = OPC.practiceStats(C.plays, C.logs, today, Math.round(st.dailyGoal) || 3, tasksDone);
+    return { id: who.sid, name: who.name, group: who.group, tasks: tasks,
+             stats: stats, trophies: OPC.trophies(stats),
              dailyCap: OPC.DAILY_CAP, today: OPC.dayToDate(today), settings: st, speeds: OPC.speeds(st) };
   }
 
@@ -73,9 +68,22 @@ function make(svc, who) {
     });
   }
 
+  /* 每次有效練習記一筆（全對與否都算）；每人每任務每天最多 20 筆。失敗（例如規則還沒發佈）不影響全對紀錄 */
+  function writePlay(taskId, pct, ok) {
+    var today = OPC.todayDay(), k = 0;
+    C.plays.forEach(function (l) { if (l.task === taskId && l.day === today && l.k > k) k = l.k; });
+    k++;
+    if (k > 20) return Promise.resolve(false);
+    var id = who.sid + '_' + taskId + '_' + today + '_' + k;
+    var d = { sid: who.sid, task: taskId, day: today, k: k, ok: !!ok, pct: pct, ts: sdk.serverTimestamp() };
+    return sdk.setDoc(sdk.doc(db, 'plays', id), d).then(function () {
+      C.plays.push({ task: taskId, day: today, k: k, ok: !!ok }); return true;
+    }, function () { return false; });
+  }
+
   return {
     me: function () { return load().then(build); },
-    practice: function (taskId, pct) {
+    practice: function (taskId, pct, ok) {
       pct = Math.round(Number(pct));
       var run = C ? Promise.resolve() : load();
       return run.then(function () {
@@ -85,10 +93,13 @@ function make(svc, who) {
         if (task.group !== '全部' && task.group !== who.group) throw E('這個任務不是派給你的分部');
         if (OPC.speeds(C.settings).indexOf(pct) < 0 && !(Number(task.bpm) === 0 && pct === 100)) throw E('速度不正確，請重新整理');
         var before = build(), bt = before.tasks.filter(function (t) { return t.id === taskId; })[0];
-        return writeLog(taskId, pct).then(function () {
-          var me = build(), at = me.tasks.filter(function (t) { return t.id === taskId; })[0];
-          return { me: me, awarded: at && at.done && !(bt && bt.done) ? at.points : 0,
-                   leveledUp: me.level.index > before.level.index };
+        /* 先記「有效練習」，全對再多記一筆全對紀錄（任務進度還是看全對）；全對紀錄今天記滿時不報錯，因為練習已經算了 */
+        return writePlay(taskId, pct, ok).then(function (played) {
+          var wl = ok ? writeLog(taskId, pct).catch(function (e) { if (played && /記滿/.test(e.message)) return; throw e; }) : Promise.resolve();
+          return wl.then(function () {
+            var me = build(), at = me.tasks.filter(function (t) { return t.id === taskId; })[0];
+            return { me: me, completed: !!(at && at.done && !(bt && bt.done)), played: played };
+          });
         });
       });
     },
