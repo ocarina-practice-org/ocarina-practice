@@ -349,11 +349,16 @@ function drawScore(){
     });
     jruns.forEach(r=>{
       if(r.list.length<2)return;
-      const yy=r.list[0].bottom+38+4,a=r.list[0],b=r.list[r.list.length-1];
-      el('line',{x1:a.x-6,x2:b.x+6,y1:yy,y2:yy,stroke:ink,'stroke-width':1.5,'stroke-linecap':'round'},svg);
+      /* 與前後相鄰音符距離很近時（16 分音符），底線兩端縮短，讓相鄰拍子的底線之間留出明顯缺口（同五線譜連桁的分組） */
+      const bn=bar.notes,a=r.list[0],b=r.list[r.list.length-1],ia=bn.indexOf(a),ib=bn.indexOf(b);
+      const ext=d=>Math.min(6,Math.max(2.5,(d-3.5)/2));
+      const eL=ia>0?ext(a.x-bn[ia-1].x):6,eR=ib<bn.length-1?ext(bn[ib+1].x-b.x):6;
+      const yy=a.bottom+38+4;
+      el('line',{x1:a.x-eL,x2:b.x+eR,y1:yy,y2:yy,stroke:ink,'stroke-width':1.5,'stroke-linecap':'round'},svg);
       let i=0;while(i<r.list.length){
         if(r.list[i].dur<=0.25+1e-9){let j=i;while(j+1<r.list.length&&r.list[j+1].dur<=0.25+1e-9)j++;
-          const x1=r.list[i].x-6,x2=r.list[j].x+6;el('line',{x1,x2,y1:yy+3.5,y2:yy+3.5,stroke:ink,'stroke-width':1.5,'stroke-linecap':'round'},svg);i=j+1;}
+          const x1=r.list[i].x-(i===0?eL:6),x2=r.list[j].x+(j===r.list.length-1?eR:6);
+          el('line',{x1,x2,y1:yy+3.5,y2:yy+3.5,stroke:ink,'stroke-width':1.5,'stroke-linecap':'round'},svg);i=j+1;}
         else i++;}
     });
     /* 連桁（8 分一條、16 分第二條） */
