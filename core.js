@@ -69,7 +69,7 @@ function parseNotes(s) {
     else throw new Error('音符「' + tk + '」看不懂，請用 1 2 3 4 5 6 7，高音加單引號（1\' ～ 7\'），降 Si 寫 7b，休止用 0');
     out.push({ n: n, b: beats });
   });
-  if (out.length > 200) throw new Error('音符最多 200 個（約 16～20 小節）');
+  if (out.length > 400) throw new Error('音符最多 400 個（約 16 小節）');
   if (!out.some(function (x) { return x.n > 0; })) throw new Error('至少要有一個音（不能全是休止）');
   return out;
 }
