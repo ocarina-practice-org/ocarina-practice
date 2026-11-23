@@ -92,6 +92,7 @@ const M=[
 const up=M.map(m=>Array.isArray(m)?m[0]:m), down=M.map(m=>Array.isArray(m)?m[1]:m);
 /* 預設選曲範圍：四大段（練習追蹤用） */
 const PRE=[['第1段　m1–15',1,15],['第2段　m16–35',16,35],['第3段　m36–55',36,55],['第4段　m56–72',56,72]];
-S.gloriaup={id:'gloriaup',title:'Gloria（上聲部）',ts:[4,4],bars:up,presets:PRE};
-S.gloriadown={id:'gloriadown',title:'Gloria（下聲部）',ts:[4,4],bars:down,presets:PRE};
+S.gloriaup={id:'gloriaup',title:'Gloria 一聲部（上）',ts:[4,4],bars:up,presets:PRE};
+S.gloriadown={id:'gloriadown',title:'Gloria 一聲部（下）',ts:[4,4],bars:down,presets:PRE};
+Object.defineProperty(S,'gloria',{value:S.gloriaup,enumerable:false,configurable:true});   /* 舊任務的代號 gloria（原「陶笛編曲」）仍能開啟，對應一聲部（上）；不列在選單 */
 })(typeof window!=='undefined'?window:globalThis);

@@ -177,8 +177,8 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
   </section>
 
 </div>
-<script src="songs.js?v=9"></script>
-<script src="gloria-songs.js?v=2"></script>
+<script src="songs.js?v=10"></script>
+<script src="gloria-songs.js?v=3"></script>
 <script>
 (function(){
 'use strict';
@@ -616,7 +616,7 @@ function showGauge(diff,nr){
 function setLive(c,l){$('count').textContent=c;$('live').textContent=l||' ';}
 
 /* ========== 曲目、範圍與進度（原型：只存手機，不計星星糖與水晶碎片） ========== */
-let cfg=TASK?{song:TASK.song,from:TASK.from,to:TASK.to}:{song:'star',from:1,to:8};
+let cfg=TASK?{song:TASK.song,from:TASK.from,to:TASK.to}:{song:'gloriaup',from:1,to:15};
 function taskKey(){return cfg.song+':'+cfg.from+'-'+cfg.to;}
 function loadP(){let o=OLMSave.read(STORE);o.tasks=o.tasks||{};o.played=o.played||{};return o;}
 let P=loadP();
