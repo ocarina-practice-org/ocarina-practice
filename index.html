@@ -338,11 +338,13 @@ async function submitPractice(id, pct, ok){
 }
 
 /* ====================== 樂譜練習（song.html，嵌在彈窗裡） ====================== */
+/* 每次改版把這個值改一下：樂譜頁在彈窗的 iframe 裡，加上版本參數才不會讀到手機裡舊的快取 */
+const BUILD = '20261123b';
 function openSong(id){
   const m = S.me, t = m.tasks.find(x => x.id === id); if (!t || !t.song) return;
   closeSong();
   const q = new URLSearchParams({ task: t.id, song: t.song, from: t.from, to: t.to, name: t.title,
-                                  target: t.target, bpm: t.bpm || 0, done: t.count || 0 });
+                                  target: t.target, bpm: t.bpm || 0, done: t.count || 0, v: BUILD });
   const el = document.createElement('div'); el.className = 'modal'; el.id = 'songModal';
   el.style.padding = '0';   /* 滿版：橫放手機時樂譜才有足夠寬度，關閉用樂譜頁自己的「返回」 */
   el.innerHTML = `<div class="card" style="max-width:none;width:100vw;height:100vh;height:100dvh;padding:0;overflow:hidden;border-radius:0;border:0">
