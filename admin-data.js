@@ -66,6 +66,7 @@ function make(svc) {
       var outTasks = tasks.map(function (t) {
         return { id: t.id, title: t.title, note: t.note || '', group: t.group, target: t.target, points: t.points,
                  notes: OPC.notesStr(OPC.safeNotes(t.notes)), bpm: Number(t.bpm) || 0, startDate: t.startDate, endDate: t.endDate,
+                 song: t.song || '', from: Number(t.from) || 0, to: Number(t.to) || 0,
                  eligible: elig[t.id], done: done[t.id], progress: progress[t.id], best: best[t.id] };
       }).sort(function (a, b) { return a.startDate < b.startDate ? 1 : a.startDate > b.startDate ? -1 : 0; });
       var names = {}, titles = {};
@@ -126,7 +127,7 @@ function make(svc) {
 
     saveTask: function (t) {
       var c = OPC.cleanTask(t), id = t.id || rid('t');
-      var d = { title: c.title, note: c.note, group: c.group, target: c.target, points: c.points, startDate: c.startDate, endDate: c.endDate, notes: c.notes, bpm: c.bpm };
+      var d = { title: c.title, note: c.note, group: c.group, target: c.target, points: c.points, startDate: c.startDate, endDate: c.endDate, notes: c.notes, bpm: c.bpm, song: c.song, from: c.from, to: c.to };
       if (!t.id) d.created = nowIso();
       return wrap(t.id ? sdk.updateDoc(sdk.doc(db, 'tasks', id), d) : sdk.setDoc(sdk.doc(db, 'tasks', id), d)).then(function () { return id; });
     },

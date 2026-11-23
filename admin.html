@@ -216,7 +216,7 @@ function taskForm(){
     <div class="row2"><div><label>需過關幾次</label><input id="tTarget" type="number" min="1" max="50" value="${esc(e.target)}"></div><div><label>完成得幾分</label><input id="tPoints" type="number" min="0" max="100" value="${esc(e.points)}"></div></div>
     <div class="row2"><div><label>開始日</label><input id="tStart" type="date" value="${esc(e.startDate)}"></div><div><label>結束日</label><input id="tEnd" type="date" value="${esc(e.endDate)}"></div></div>
     <label>歌曲（選填：選歌曲並填小節範圍，按下方按鈕自動產生音符）</label>
-    <div class="row2"><div><select id="tSong">${Object.keys(window.OP_SONGS || {}).map(k => '<option value="' + k + '">' + esc(window.OP_SONGS[k].title) + '</option>').join('')}</select></div><div><input id="tFrom" type="number" min="1" placeholder="從第幾小節"></div></div>
+    <div class="row2"><div><select id="tSong">${Object.keys((window.OLM_SONGS || {}).SONGS || {}).map(k => '<option value="' + k + '"' + (e.song === k ? ' selected' : '') + '>' + esc(window.OLM_SONGS.SONGS[k].title) + '</option>').join('')}</select></div><div><input id="tFrom" type="number" min="1" placeholder="從第幾小節"></div></div>
     <div class="row2" style="margin-top:6px"><div><input id="tTo" type="number" min="1" placeholder="到第幾小節（可不填）"></div><div><button class="chip" data-act="fillSong">依歌曲產生音符</button></div></div>
     <label>收音音符（留空＝自由吹奏）</label>
     <input id="tNotes" value="${esc(e.notes)}" placeholder="例如：1 1 5 5 6 6 5:2">
@@ -309,7 +309,8 @@ function stuMenu(id){
 function readTaskForm(){
   const v = id => document.getElementById(id).value;
   return { id: A.edit.id, title: v('tTitle'), note: v('tNote'), group: v('tGroup'), target: v('tTarget'), points: v('tPoints'),
-           startDate: v('tStart'), endDate: v('tEnd'), notes: v('tNotes'), bpm: v('tBpm') };
+           startDate: v('tStart'), endDate: v('tEnd'), notes: v('tNotes'), bpm: v('tBpm'),
+           song: A.edit.song || '', from: A.edit.from || 0, to: A.edit.to || 0 };
 }
 
 async function copyLast(){
@@ -349,12 +350,21 @@ document.addEventListener('click', async ev => {
     case 'editTask': { const t = A.data.tasks.find(x => x.id === id); A.err = ''; A.edit = Object.assign({}, t); return viewAdmin(); }
     case 'preset': { document.getElementById('tNotes').value = v; return; }
     case 'fillSong': {
-      const key = document.getElementById('tSong').value, song = (window.OP_SONGS || {})[key];
+      const key = document.getElementById('tSong').value, song = ((window.OLM_SONGS || {}).SONGS || {})[key];
       const from = parseInt(document.getElementById('tFrom').value, 10), to = parseInt(document.getElementById('tTo').value, 10) || from;
       if (!song) { A.err = '請先選歌曲'; return viewAdmin(); }
       if (!(from >= 1 && to >= from && to <= song.bars.length)) { A.err = '小節範圍請填 1～' + song.bars.length + '，且「到」不小於「從」'; return viewAdmin(); }
-      const text = song.bars.slice(from - 1, to).join(' ').replace(/\bb7(?=[:\s]|$)/g, '7b');
-      const f = readTaskForm(); f.notes = text; f.title = f.title || (song.title + ' 第' + from + '–' + to + '小節');
+      let text;
+      try {
+        text = song.bars.slice(from - 1, to).join(' ').split(/\s+/).filter(Boolean).map(tk => {
+          const p = tk.replace(/~/g, '').split(':');
+          if (p[0].indexOf('#') >= 0) throw new Error('這段有升記號（#），目前的音符寫法還不支援，請換一段小節');
+          const s = p[0] === 'b7' ? '7b' : p[0];
+          return p.length > 1 ? s + ':' + p[1] : s;
+        }).join(' ');
+      } catch (e) { A.err = e.message; return viewAdmin(); }
+      const f = readTaskForm(); f.notes = text; f.song = key; f.from = from; f.to = to;
+      f.title = f.title || (song.title + ' 第' + from + '–' + to + '小節');
       A.edit = f; A.err = ''; return viewAdmin();
     }
     case 'saveTask':

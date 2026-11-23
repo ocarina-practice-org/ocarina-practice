@@ -231,7 +231,7 @@ function taskCard(t, m){
     <div class="mini" style="margin-bottom:10px">${t.count} / ${t.target} 次　·　完成可得 ${t.points} 分${!t.done ? `　·　今天已記 ${t.todayCount}/${cap}` : ''}</div>
     ${t.done ? '<span class="badge">🌟 已完成！</span>'
       : t.status === 'current'
-        ? `<button class="btn big" data-act="mic" data-id="${esc(t.id)}" ${full ? 'disabled' : ''}>${full ? '今天記滿囉，明天再來' : '🎤 開始吹奏'}</button>`
+        ? `${t.song ? `<button class="btn alt big" data-act="song" data-id="${esc(t.id)}" ${full ? 'disabled' : ''}>🎼 樂譜練習</button>` : ''}<button class="btn big" data-act="mic" data-id="${esc(t.id)}" ${full ? 'disabled' : ''}>${full ? '今天記滿囉，明天再來' : '🎤 開始吹奏'}</button>`
         : '<span class="mini">這個任務已經結束</span>'}
   </div>`;
 }
@@ -262,6 +262,29 @@ async function submitPractice(id, pct){
   } catch(e){ toast(e.message, 2800); if (/重新登入/.test(e.message)) { S.me = null; viewLogin(); } }
   S.busy = false;
 }
+
+/* ====================== 樂譜練習（song.html，嵌在彈窗裡） ====================== */
+function openSong(id){
+  const m = S.me, t = m.tasks.find(x => x.id === id); if (!t || !t.song) return;
+  closeSong();
+  const q = new URLSearchParams({ task: t.id, song: t.song, from: t.from, to: t.to, name: t.title,
+                                  target: t.target, bpm: t.bpm || 0, done: t.count || 0 });
+  const el = document.createElement('div'); el.className = 'modal'; el.id = 'songModal';
+  el.innerHTML = `<div class="card" style="width:min(720px,96vw);height:92vh;padding:0;overflow:hidden;position:relative">
+    <button class="btn small" id="songClose" style="position:absolute;top:8px;right:8px;z-index:2">✕ 關閉</button>
+    <iframe src="song.html?${q.toString()}" title="樂譜練習" style="border:0;width:100%;height:100%"></iframe></div>`;
+  el.querySelector('#songClose').onclick = closeSong;
+  document.body.appendChild(el);
+}
+function closeSong(){ const el = document.getElementById('songModal'); if (el) el.remove(); }
+
+/* 樂譜練習每吹完一次：全對才送出一筆紀錄（同練習面板的規則） */
+window.addEventListener('message', ev => {
+  const d = ev.data || {};
+  if (d.src !== 'song-practice' || d.type !== 'songLog' || !d.perfect) return;
+  if (S.busy || !S.me) return;
+  submitPractice(String(d.task), 100);
+});
 
 /* ====================== 收音面板 ====================== */
 let P = null;   // 目前的練習面板狀態
@@ -477,6 +500,7 @@ document.addEventListener('click', async ev => {
     case 'register': return doLogin(true);
     case 'logout': S.me = null; DATA = null; try { await SVC.logout(); } catch(e){} return viewLogin();
     case 'mic': return openPractice(id);
+    case 'song': return openSong(id);
     case 'togglePast': S.showPast = !S.showPast; return viewStudent();
   }
 });

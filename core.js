@@ -92,8 +92,12 @@ function cleanTask(t, knownGroups) {
   const parsed = parseNotes(t.notes), bpm = Math.floor(Number(t.bpm)) || 0;
   if (bpm && (bpm < 30 || bpm > 200)) throw new Error('速度（BPM）請填 30～200，或留空');
   if (bpm && !parsed.length) throw new Error('要設定速度，請先填收音音符');
+  const song = String(t.song || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+  const from = Math.floor(Number(t.from)) || 0, to = Math.floor(Number(t.to)) || 0;
+  if (song && !(from >= 1 && to >= from)) throw new Error('歌曲的小節範圍不正確');
   return { title: title, note: note, group: group, target: target, points: points,
-           startDate: t.startDate, endDate: t.endDate, notes: notesStr(parsed), bpm: bpm };
+           startDate: t.startDate, endDate: t.endDate, notes: notesStr(parsed), bpm: bpm,
+           song: song, from: song ? from : 0, to: song ? to : 0 };
 }
 
 /* ---------- 積分、等級、進度（學生頁、老師後台共用）----------

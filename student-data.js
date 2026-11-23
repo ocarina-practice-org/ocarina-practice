@@ -35,6 +35,7 @@ function make(svc, who) {
       var p = comp.per[t.id];
       return { id: t.id, title: t.title, note: t.note || '', target: t.target, points: t.points,
                notes: OPC.safeNotes(t.notes), bpm: Number(t.bpm) || 0, bestPct: p.bestPct,
+               song: t.song || '', from: Number(t.from) || 0, to: Number(t.to) || 0,
                startDate: dateOf(t.startDate), endDate: dateOf(t.endDate),
                status: OPC.dateToDay(t.endDate) >= today ? 'current' : 'past',
                count: Math.min(p.count, t.target), done: p.done, todayCount: p.todayCount };
