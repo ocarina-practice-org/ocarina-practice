@@ -74,6 +74,22 @@ label{display:block;font-weight:700;margin:12px 0 4px}
 .heard{font-weight:900;font-size:1.2rem;text-align:center;min-height:1.8em}
 .pmsg{text-align:center;font-weight:900;min-height:1.6em;margin:4px 0}
 .count{font-size:3rem;text-align:center;font-weight:900;min-height:1.2em}
+/* 簡潔版（參照管理後台的版面） */
+body{background:#f6f1e6;background-image:none;font-size:16px}
+#app{max-width:860px;padding:0 0 60px}
+#app>.top:first-child{background:#2f5f50;color:#fff;padding:16px 20px;border-radius:0 0 14px 14px;margin:0 0 6px}
+#app>.top:first-child h1{color:#fff;font-size:1.3rem;margin:0}
+.card{background:#fff;border:1px solid #e4dccd;border-radius:14px;box-shadow:none;padding:18px;margin:12px 0}
+.btn{background:#2f5f50;color:#fff;border:0;border-radius:10px;box-shadow:none;font-size:1rem;font-weight:600}
+.btn:active{transform:none}
+.btn.green{background:#2f5f50}.btn.blue{background:#4a7f9d}.btn.red{background:#b5534a}
+.btn.small{padding:6px 12px;font-size:.9rem}
+.btn.ghost{background:#fff;color:#2f5f50;border:1px solid #2f5f50}
+.tabs{gap:8px;margin:14px 0}
+.tabs .chip{border:1px solid #cfc4b0;border-radius:999px;background:#fff;color:#4a3426;box-shadow:none;font-weight:600}
+.tabs .chip.on{background:#2f5f50;color:#fff;border-color:#2f5f50}
+input,select{border:1px solid #cfc4b0;border-radius:10px;font-family:inherit}
+.badge{background:#2f5f50;color:#fff;border:0}
 </style>
 </head>
 <body>
@@ -166,10 +182,10 @@ function shortDate(s){ return s ? s.slice(5) : '—'; }
 function viewAdmin(){
   const D = A.data;
   $app.innerHTML = `
-    <div class="top"><h1>🧑‍🏫 老師後台</h1><div><button class="btn small" data-act="reloadAdmin">重新整理</button> <button class="btn small" data-act="adminLogout">登出</button></div></div>
+    <div class="top"><h1>陶笛回家練習｜老師後台</h1><div><button class="btn small" data-act="reloadAdmin">重新整理</button> <button class="btn small" data-act="adminLogout">登出</button></div></div>
     <p class="sub">今天 ${esc(D.today)}　·　本週 ${esc(shortDate(D.weekStart))} ～ ${esc(shortDate(D.weekEnd))}</p>
     <div class="tabs">
-      ${[['students','👦 學生總覽'],['tasks','📋 每週任務'],['logs','🕒 練習紀錄']].map(t => `<button class="chip ${A.tab === t[0] ? 'on' : ''}" data-act="tab" data-v="${t[0]}">${t[1]}</button>`).join('')}
+      ${[['students','學生名單'],['tasks','指派每週任務'],['logs','練習紀錄']].map(t => `<button class="chip ${A.tab === t[0] ? 'on' : ''}" data-act="tab" data-v="${t[0]}">${t[1]}</button>`).join('')}
     </div>
     <div id="adminBody"></div>`;
   const b = document.getElementById('adminBody');
