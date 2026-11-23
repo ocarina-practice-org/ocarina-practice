@@ -144,9 +144,8 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
     <div class="resline" id="resLine" hidden>
       <div class="verdict" id="verdict"></div>
       <div class="legend" id="legend">
-        <span><i style="background:var(--green)"></i>對</span>
-        <span><i style="background:var(--amber)"></i>音偏／拍子不準</span>
-        <span><i style="background:var(--ruby)"></i>吹錯／漏吹</span>
+        <span><i style="background:var(--ruby)"></i>音準不對（偏高／偏低／錯音／漏）</span>
+        <span><i style="background:var(--amber)"></i>拍子不對（早／晚）</span>
       </div>
     </div>
     <div id="liveBox" hidden>
@@ -216,9 +215,9 @@ function el(tag,attrs,parent,text){const e=document.createElementNS(SVGNS,tag);f
 function stepOf(n){return (4+n.oct)*7+(n.deg-1)-(4*7+2);}   /* 相對 E4（下加一線）的音階級數；譜面低一個八度 */
 /* 簡譜時值記號：8 分下加一條線、16 分兩條；2 拍以上在右邊加「－」（每多一拍一條）；附點加「·」 */
 function durMarks(n,x,ty,g,ink){
-  const d=n.dur,lines=d<=0.25+1e-9?2:d<=0.75+1e-9?1:0;
+  const d=n.dur,lines=d<=0.25+1e-9?2:d<=0.75+1e-9?1:0,skip=!!n.jgrp;   /* 同一拍內的短音符用連在一起的底線（畫在 drawScore） */
   let hw=5;try{const b=n.num.getBBox();if(b.width>0)hw=b.width/2;}catch(e){}   /* 數字實際半寬 */
-  for(let k=0;k<lines;k++)el('line',{x1:x-6,x2:x+6,y1:ty+4+k*3.5,y2:ty+4+k*3.5,stroke:ink,'stroke-width':1.5,'stroke-linecap':'round'},g);
+  if(!skip)for(let k=0;k<lines;k++)el('line',{x1:x-6,x2:x+6,y1:ty+4+k*3.5,y2:ty+4+k*3.5,stroke:ink,'stroke-width':1.5,'stroke-linecap':'round'},g);
   /* 簡譜附點只用在 0.75、1.5 拍；3 拍以上已由「－」表達時值，不再加附點 */
   if([0.75,1.5].some(v=>Math.abs(d-v)<1e-9))el('circle',{cx:x+hw+3.5,cy:ty-4,r:1.7,fill:ink},g);
   if(d>=2-1e-9){const m=Math.round(d)-1;for(let k=0;k<m;k++)el('line',{x1:x+hw+4+k*13,x2:x+hw+13+k*13,y1:ty-5,y2:ty-5,stroke:ink,'stroke-width':1.8,'stroke-linecap':'round'},g);}
@@ -285,6 +284,11 @@ function drawScore(){
       else g=null;
     });
     const grp=new Map();groups.forEach(G=>{if(G.list.length>=2)G.list.forEach(n=>grp.set(n,G));});
+    /* 簡譜的拍子底線：同一拍內連續的短音符（含休止）共用一條連續底線；16 分音符連續的再加第二條 */
+    const jruns=[];{let cur=null;bar.notes.forEach(n=>{
+      if(n.dur<1-1e-9){const key=Math.floor(n.beatInBar+1e-6);if(cur&&cur.key===key)cur.list.push(n);else{cur={key,list:[n]};jruns.push(cur);}}
+      else cur=null;});
+      jruns.forEach(r=>{if(r.list.length>=2)r.list.forEach(n=>{n.jgrp=r;});});}
     bar.notes.forEach(n=>{
       const top=n.top,bottom=n.bottom,x=n.x;
       const gEl=el('g',{'data-i':n.i,style:'cursor:pointer'},svg);
@@ -342,6 +346,15 @@ function drawScore(){
       if(n.oct>=2)el('circle',{cx:x,cy:ty-21,r:1.7,fill:ink},gEl);
       n.badge=el('text',{x:x,y:ty+22,'font-size':10.5,'font-weight':800,'text-anchor':'middle',fill:ink2},gEl,'');
       if(n.tieNext)ties.push(n);
+    });
+    jruns.forEach(r=>{
+      if(r.list.length<2)return;
+      const yy=r.list[0].bottom+38+4,a=r.list[0],b=r.list[r.list.length-1];
+      el('line',{x1:a.x-6,x2:b.x+6,y1:yy,y2:yy,stroke:ink,'stroke-width':1.5,'stroke-linecap':'round'},svg);
+      let i=0;while(i<r.list.length){
+        if(r.list[i].dur<=0.25+1e-9){let j=i;while(j+1<r.list.length&&r.list[j+1].dur<=0.25+1e-9)j++;
+          const x1=r.list[i].x-6,x2=r.list[j].x+6;el('line',{x1,x2,y1:yy+3.5,y2:yy+3.5,stroke:ink,'stroke-width':1.5,'stroke-linecap':'round'},svg);i=j+1;}
+        else i++;}
     });
     /* 連桁（8 分一條、16 分第二條） */
     groups.forEach(G=>{
@@ -523,13 +536,14 @@ function describe(r){
 }
 function colorOf(r){
   if(r.miss||r.pitch==='wrong'||r.short)return 'var(--ruby)';
-  if(r.pitch!=='ok'||r.timing!=='ok')return 'var(--amber)';
-  return 'var(--green)';
+  if(r.pitch!=='ok')return 'var(--ruby)';      /* 音準有問題（偏高／偏低） */
+  if(r.timing!=='ok')return 'var(--amber)';    /* 只有拍子有問題（早／晚） */
+  return 'var(--ink)';                          /* 對的音維持原本顏色，不標示 */
 }
 function badgeOf(r){
   if(r.miss)return '漏';
   let s='';
-  if(r.pitch==='high')s+='↑';else if(r.pitch==='low')s+='↓';else if(r.pitch==='wrong')s+='✗';
+  if(r.pitch==='high')s+='偏高';else if(r.pitch==='low')s+='偏低';else if(r.pitch==='wrong')s+='錯音';
   if(r.timing==='early')s+='早';else if(r.timing==='late')s+='晚';else if(r.timing===null&&r.pitch!=='wrong')s+='?';
   if(r.short)s+='短';
   return s;
