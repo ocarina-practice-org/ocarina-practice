@@ -111,7 +111,7 @@ ul.errs li b{font-weight:800}
       <input id="to" type="number" inputmode="numeric" min="1" style="width:70px;font:inherit;font-size:16px;padding:6px;border:2px solid var(--ink-2);border-radius:10px">
       <span id="rangeMax" style="font-size:12px;color:var(--ink-2)"></span></div>
     <div class="row"><label for="bpm">速度</label>
-      <select id="bpm"><option value="40">♩=40（很慢）</option><option value="50">♩=50（慢）</option><option value="60" selected>♩=60（標準）</option><option value="72">♩=72（稍快）</option><option value="90">♩=90（快）</option></select></div>
+      <select id="bpm"><option value="100" selected>原速 100%</option><option value="90">原速 90%</option><option value="80">原速 80%</option></select></div>
     <div class="row"><label for="tol">音準容許</label>
       <select id="tol"><option value="10">±10 音分</option><option value="15">±15 音分</option><option value="25" selected>±25 音分（鬆）</option><option value="40">±40 音分（很鬆）</option></select></div>
     <p class="hint">「聽示範」會用目前選的小節與速度，先 4 拍預備拍再播一遍（合成音，不是真陶笛），樂譜游標會跟著走；示範時麥克風是關的。<br>按「開始吹奏」後先聽 4 拍預備拍，接著照譜吹；休止符就停下來。音準、節拍都對，才算一次「正確」。相同的音連著吹時，請用舌頭輕輕「tu」斷開。建議戴耳機，節拍聲才不會被麥克風收進去。一次最多練 16 小節。</p>
@@ -501,6 +501,11 @@ function closeMic(){
   if(ctx){try{ctx.close();}catch(e){}ctx=null;}
   an=null;
 }
+/* 速度＝原速的百分比（原速＝任務指定的 BPM；沒有指定時用曲子的原速） */
+function bpmNow(){
+  const base=(TASK&&TASK.speed)||(R&&R.song&&R.song.tempo)||118;
+  return Math.round(base*parseInt($('bpm').value,10)/100);
+}
 function click(t,accent){
   const o=ctx.createOscillator(),g=ctx.createGain();
   o.type='square';o.frequency.value=accent?1500:1000;
@@ -576,7 +581,7 @@ async function startRun(){
   $('goBtn').disabled=true;
   try{await openMic();}catch(e){showErr(micError(e));$('goBtn').disabled=false;return;}
   window.Sfx&&Sfx.mic(true);
-  const bpm=parseInt($('bpm').value,10),beat=60/bpm,tol=parseFloat($('tol').value);
+  const bpm=bpmNow(),beat=60/bpm,tol=parseFloat($('tol').value);
   const T0=ctx.currentTime+0.7;
   const S=T0+COUNT_IN*beat,TB=R.totalBeats,bpb=R.song.ts[0];
   const clicks=[],nodes=[];
@@ -690,10 +695,11 @@ async function startDemo(){
     ctx=new (window.AudioContext||window.webkitAudioContext)();
     if(ctx.state==='suspended')await ctx.resume();
   }catch(e){showErr('無法播放聲音。請確認手機沒有開靜音，並用 Safari 或 Chrome 開啟。');closeMic();return;}
-  const bpm=parseInt($('bpm').value,10),beat=60/bpm,bpb=R.song.ts[0];
+  const bpm=bpmNow(),beat=60/bpm,bpb=R.song.ts[0];
   const T0=ctx.currentTime+0.4,S=T0+COUNT_IN*beat,TB=R.totalBeats;
   const nodes=[];
-  for(let k=0;k<COUNT_IN;k++){const c=click(T0+k*beat,k%bpb===0);nodes.push(c.o,c.g);}
+  /* 節拍器：預備拍＋整首示範都有click（每小節第一拍較高） */
+  for(let k=0;k<COUNT_IN+Math.ceil(TB);k++){const c=click(T0+k*beat,k%bpb===0);nodes.push(c.o,c.g);}
   R.events.forEach(e=>{
     const len=e.dur*beat,gap=Math.min(0.06,0.15*len);   /* 每個音尾端留一點空隙，同音連吹才分得開 */
     synthNote(S+e.beat*beat,len-gap,e.midi).forEach(x=>nodes.push(x));
@@ -818,7 +824,7 @@ if(TASK){   /* 任務模式：曲子與範圍由任務指定，不給改；標�
   ['rowSong','rowPreset','rowRange'].forEach(id=>$(id).hidden=true);
   $('protoNote').hidden=true;$('mockNote').hidden=!TASK.mock;
   $('pageTitle').textContent='本週任務';
-  if(TASK.speed){const sel=$('bpm');let o=[...sel.options].find(x=>+x.value===TASK.speed);if(!o){o=document.createElement('option');o.value=String(TASK.speed);o.textContent='♩='+TASK.speed+'（老師指定）';sel.appendChild(o);}sel.value=String(TASK.speed);}   /* 後台指定速度：預設選這個，仍可自己改 */
+  $('bpm').value='100';   /* 速度預設原速 100%（原速＝任務指定的 BPM） */
   document.title='陶笛回家練習｜本週任務：'+TASK.name;
 }
 
