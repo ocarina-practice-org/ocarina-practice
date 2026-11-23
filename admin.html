@@ -221,7 +221,7 @@ function taskForm(){
       <button class="chip" data-act="preset" data-v="1 2 3 4 5 6 7 1'">音階</button>
       <button class="chip" data-act="preset" data-v="">清空（自由吹奏）</button>
     </div>
-    <p class="mini">寫法：簡譜數字 1～7；高音加單引號（1' 2'）；休止寫 0；拍數寫在冒號後（5:2＝吹 2 拍，沒寫＝1 拍）。</p>
+    <p class="mini">寫法：簡譜數字 1～7；高音加單引號（1'～7'）；降 Si 寫 7b；休止寫 0；拍數寫在冒號後（5:2＝吹 2 拍，沒寫＝1 拍，可寫 0.25 等小數）。</p>
     <label>原速 BPM（填了＝跟著節拍吹，並開放三個速度階段；留空＝不跟拍）</label>
     <input id="tBpm" type="number" min="30" max="200" value="${esc(e.bpm || '')}" placeholder="例如：72">
     ${A.err ? '<div class="err">' + esc(A.err) + '</div>' : ''}

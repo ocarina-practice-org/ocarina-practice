@@ -45,8 +45,8 @@ function weekStartDay(d) { const dow = new Date(d * 864e5).getUTCDay(); return d
 function validDate(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s)) && !isNaN(Date.parse(s + 'T00:00:00Z')); }
 
 /* ---------- 收音音符 ----------
-   簡譜數字 1~7，高音 1' 2'（也可寫 8、9 或「高1」），0＝休止；拍數寫冒號後（5:2＝2 拍，沒寫＝1 拍）。
-   回傳 [{n, b}]（n：8＝高Do、9＝高Re、0＝休止）；空白＝自由吹奏模式。 */
+   簡譜數字 1~7，高音 1'～7'（或「高1」～「高7」，也可寫 8、9＝高Do、高Re），降 Si 寫 7b，0＝休止；拍數寫冒號後（5:2＝2 拍，沒寫＝1 拍）。
+   回傳 [{n, b}]（n：1~7＝1~7、8~14＝高1~高7、15＝降Si、0＝休止）；空白＝自由吹奏模式。 */
 function parseNotes(s) {
   const raw = String(s == null ? '' : s).replace(/[,，、\-－]/g, ' ').replace(/\s+/g, ' ').trim();
   if (!raw) return [];
@@ -60,9 +60,10 @@ function parseNotes(s) {
     tk = tk.replace(/[’˙̇·]/g, "'");
     let n = 0, m;
     if (/^[0-7]$/.test(tk)) n = Number(tk);
-    else if ((m = /^([12])'$/.exec(tk)) || (m = /^高([12])$/.exec(tk))) n = 7 + Number(m[1]);
+    else if ((m = /^([1-7])'$/.exec(tk)) || (m = /^高([1-7])$/.exec(tk))) n = 7 + Number(m[1]);
     else if (/^[89]$/.test(tk)) n = Number(tk);
-    else throw new Error('音符「' + tk + '」看不懂，請用 1 2 3 4 5 6 7，高音加單引號（1\' 2\'），休止用 0');
+    else if (/^(7b|降7)$/.test(tk)) n = 15;
+    else throw new Error('音符「' + tk + '」看不懂，請用 1 2 3 4 5 6 7，高音加單引號（1\' ～ 7\'），降 Si 寫 7b，休止用 0');
     out.push({ n: n, b: beats });
   });
   if (out.length > 64) throw new Error('音符最多 64 個');
@@ -72,7 +73,7 @@ function parseNotes(s) {
 function safeNotes(s) { try { return parseNotes(s); } catch (e) { return []; } }
 function notesStr(arr) {
   return arr.map(function (x) {
-    return (x.n === 0 ? '0' : x.n <= 7 ? String(x.n) : (x.n - 7) + "'") + (x.b !== 1 ? ':' + x.b : '');
+    return (x.n === 0 ? '0' : x.n === 15 ? '7b' : x.n <= 7 ? String(x.n) : (x.n - 7) + "'") + (x.b !== 1 ? ':' + x.b : '');
   }).join(' ');
 }
 
@@ -134,9 +135,9 @@ function compute(group, tasks, logs, adjs, today) {
 
 /*JUDGE-START*/
 /* ====== 收音判定（純計算，不碰畫面）====== */
-const SEMI = [0, 2, 4, 5, 7, 9, 11, 12, 14];            // 1~7、高Do、高Re 距離 Do 的半音數
-const NAMES = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si', '高Do', '高Re'];
-const NUMS = ['1', '2', '3', '4', '5', '6', '7', "1̇", "2̇"];
+const SEMI = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 10];  // 1~7、高1~高7、降Si 距離 Do 的半音數
+const NAMES = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si', '高Do', '高Re', '高Mi', '高Fa', '高Sol', '高La', '高Si', '降Si'];
+const NUMS = ['1', '2', '3', '4', '5', '6', '7', "1̇", "2̇", "3̇", "4̇", "5̇", "6̇", "7̇", "7♭"];
 const C5 = 523.251;                                       // 中音 Do＝C5，標準音高 A=440
 const freqOf = n => C5 * Math.pow(2, SEMI[n - 1] / 12);
 const centsBetween = (f, g) => 1200 * Math.log2(f / g);
