@@ -31,7 +31,13 @@ function make(svc) {
   function all(n, q) {
     return sdk.getDocs(q || col(n)).then(function (s) { var a = []; s.forEach(function (d) { var x = d.data(); x.id = d.id; a.push(x); }); return a; });
   }
-  function adminEmail() { return String((g.OP_FIREBASE && g.OP_FIREBASE.adminEmail) || '').toLowerCase(); }
+  function adminEmails() {
+    var c = g.OP_FIREBASE || {};
+    var list = Array.isArray(c.adminEmails) ? c.adminEmails.slice() : [];
+    if (c.adminEmail) list.push(c.adminEmail);
+    return list.map(function (e) { return String(e || '').trim().toLowerCase(); }).filter(Boolean);
+  }
+  function isAdminEmail(email) { return adminEmails().indexOf(String(email || '').toLowerCase()) !== -1; }
 
   function groupsOf(students) {
     var m = {}; students.forEach(function (s) { if (s.group) m[s.group] = 1; });
@@ -101,7 +107,7 @@ function make(svc) {
       email = String(email || '').trim();
       if (!email || !pw) return Promise.reject(E('請輸入 Email 和密碼'));
       return wrap(sdk.signInWithEmailAndPassword(auth, email, pw)).then(function (c) {
-        if (String(c.user.email || '').toLowerCase() !== adminEmail()) {
+        if (!isAdminEmail(c.user.email)) {
           return sdk.signOut(auth).then(function () { throw E('這個帳號不是管理者'); });
         }
         return c.user;
@@ -112,7 +118,7 @@ function make(svc) {
       return new Promise(function (res) {
         var done = false, off = null;
         function fin(v) { if (done) return; done = true; try { off && off(); } catch (e) {} res(v); }
-        off = sdk.onAuthStateChanged(auth, function (u) { fin(u && String(u.email || '').toLowerCase() === adminEmail() ? u : null); });
+        off = sdk.onAuthStateChanged(auth, function (u) { fin(u && isAdminEmail(u.email) ? u : null); });
         if (done) { try { off && off(); } catch (e) {} }
       });
     },

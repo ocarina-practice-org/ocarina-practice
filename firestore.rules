@@ -1,7 +1,7 @@
 rules_version = '2';
 // 陶笛回家練習｜Firestore 安全規則
 // 貼到 Firebase 控制台 → Firestore Database → 規則 → 發佈。
-// ⚠️ 管理者 email（下面 isAdmin）要和 firebase-config.js 的 adminEmail 一樣。
+// ⚠️ 管理者 email 清單（下面 isAdmin）要和 firebase-config.js 的 adminEmails 一樣。
 //
 // 資料：
 //   students/{key}  學生。key＝「姓名＋分部」的 SHA-256 前 24 碼（見 student-auth.js）；欄位 name、group、ack、created、uid
@@ -21,7 +21,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email == 'a0929870116@gmail.com';
+        && request.auth.token.email in ['a0929870116@gmail.com', 'efland95@gmail.com'];
     }
     function signedIn() {
       return request.auth != null;

@@ -12,6 +12,8 @@ window.OP_FIREBASE = {
     appId: "1:882240863007:web:a49dddd51f0afda97bce2a"
   },
   sdkVersion: "13.3.0",
-  adminEmail: "a0929870116@gmail.com"   /* 後台只有這個帳號能進（要先在 Authentication 建立這個 Email／密碼的使用者）；
-                                           firestore.rules 裡的管理者 email 要和這裡一樣 */
+  adminEmail: "a0929870116@gmail.com",  /* 登入頁預設填入的老師 Email */
+  /* 老師後台可以登入的所有帳號（要先在 Authentication 建立這些 Email／密碼的使用者）；
+     firestore.rules 裡的管理者 email 清單要和這裡一樣 */
+  adminEmails: ["a0929870116@gmail.com", "efland95@gmail.com"]
 };
