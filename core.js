@@ -63,6 +63,9 @@ function parseNotes(s) {
     else if ((m = /^([1-7])'$/.exec(tk)) || (m = /^高([1-7])$/.exec(tk))) n = 7 + Number(m[1]);
     else if (/^[89]$/.test(tk)) n = Number(tk);
     else if (/^(7b|降7)$/.test(tk)) n = 15;
+    else if (/^(b3|降3)$/.test(tk)) n = 16;
+    else if (/^(b3'|降3')$/.test(tk)) n = 17;
+    else if (/^#1'$/.test(tk)) n = 18;
     else throw new Error('音符「' + tk + '」看不懂，請用 1 2 3 4 5 6 7，高音加單引號（1\' ～ 7\'），降 Si 寫 7b，休止用 0');
     out.push({ n: n, b: beats });
   });
@@ -73,7 +76,8 @@ function parseNotes(s) {
 function safeNotes(s) { try { return parseNotes(s); } catch (e) { return []; } }
 function notesStr(arr) {
   return arr.map(function (x) {
-    return (x.n === 0 ? '0' : x.n === 15 ? '7b' : x.n <= 7 ? String(x.n) : (x.n - 7) + "'") + (x.b !== 1 ? ':' + x.b : '');
+    const ACC = { 15: '7b', 16: 'b3', 17: "b3'", 18: "#1'" };
+    return (x.n === 0 ? '0' : ACC[x.n] ? ACC[x.n] : x.n <= 7 ? String(x.n) : (x.n - 7) + "'") + (x.b !== 1 ? ':' + x.b : '');
   }).join(' ');
 }
 
@@ -139,9 +143,9 @@ function compute(group, tasks, logs, adjs, today) {
 
 /*JUDGE-START*/
 /* ====== 收音判定（純計算，不碰畫面）====== */
-const SEMI = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 10];  // 1~7、高1~高7、降Si 距離 Do 的半音數
-const NAMES = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si', '高Do', '高Re', '高Mi', '高Fa', '高Sol', '高La', '高Si', '降Si'];
-const NUMS = ['1', '2', '3', '4', '5', '6', '7', "1̇", "2̇", "3̇", "4̇", "5̇", "6̇", "7̇", "7♭"];
+const SEMI = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 10, 3, 15, 13];  // 1~7、高1~高7、降Si、降Mi、高降Mi、高#Do 距離 Do 的半音數
+const NAMES = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si', '高Do', '高Re', '高Mi', '高Fa', '高Sol', '高La', '高Si', '降Si', '降Mi', '高降Mi', '高#Do'];
+const NUMS = ['1', '2', '3', '4', '5', '6', '7', "1̇", "2̇", "3̇", "4̇", "5̇", "6̇", "7̇", "7♭", "3♭", "3̇♭", "1̇♯"];
 const C5 = 523.251;                                       // 中音 Do＝C5，標準音高 A=440
 const freqOf = n => C5 * Math.pow(2, SEMI[n - 1] / 12);
 const centsBetween = (f, g) => 1200 * Math.log2(f / g);

@@ -97,6 +97,7 @@ input,select{border:1px solid #cfc4b0;border-radius:10px;font-family:inherit}
 <datalist id="groupList"></datalist>
 <script src="core.js"></script>
 <script src="songs.js?v=9"></script>
+<script src="gloria-songs.js?v=1"></script>
 <script src="firebase-config.js"></script>
 <script src="student-auth.js"></script>
 <script src="admin-data.js"></script>
@@ -229,7 +230,6 @@ function songNotes(key, from, to){
   if (!(from >= 1 && to >= from && to <= song.bars.length)) throw new Error('小節範圍請填 1～' + song.bars.length + '，且「到」不小於「從」');
   const notes = song.bars.slice(from - 1, to).join(' ').split(/\s+/).filter(Boolean).map(tk => {
     const p = tk.replace(/~/g, '').split(':');
-    if (p[0].indexOf('#') >= 0) throw new Error('這段有升記號（#），目前不支援，請換一段小節');
     const s = p[0] === 'b7' ? '7b' : p[0];
     return p.length > 1 ? s + ':' + p[1] : s;
   }).join(' ');
