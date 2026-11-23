@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>陶笛回家練習</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff6e0;--ink:#4a3426;--card:#fffdf5;--orange:#ff9b5e;--green:#6cc686;--blue:#6bb5ee;--pink:#f6a9bd;--yellow:#ffd95a;--grey:#e7dccb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);background-image:radial-gradient(#f3e4bd 1.5px,transparent 1.5px);background-size:22px 22px;color:var(--ink);font-family:"Zen Maru Gothic","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;font-size:17px;line-height:1.5}
+#app{max-width:720px;margin:0 auto;padding:14px 14px 60px}
+h1{font-size:1.7rem;margin:6px 0 2px;font-weight:900}
+h2{font-size:1.25rem;margin:18px 0 6px;font-weight:900}
+.sub{color:#8a7260;margin:0 0 8px}
+.card{background:var(--card);border:3px solid var(--ink);border-radius:22px;box-shadow:4px 4px 0 var(--ink);padding:16px;margin:14px 0}
+.btn{font:inherit;font-weight:900;font-size:1.1rem;border:3px solid var(--ink);border-radius:16px;padding:12px 18px;background:var(--yellow);color:var(--ink);box-shadow:3px 3px 0 var(--ink);cursor:pointer}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn:disabled{background:var(--grey);color:#9c8b78;cursor:not-allowed;box-shadow:none}
+.btn.big{width:100%;font-size:1.3rem;padding:16px;background:var(--orange)}
+.btn.green{background:var(--green)}.btn.blue{background:var(--blue)}.btn.small{font-size:.9rem;padding:6px 12px;box-shadow:2px 2px 0 var(--ink)}
+.btn.red{background:#f28b82}
+.link{background:none;border:none;font:inherit;color:#8a7260;text-decoration:underline;cursor:pointer;padding:6px 0}
+input,select,textarea{font:inherit;width:100%;border:3px solid var(--ink);border-radius:14px;padding:11px 14px;background:#fff;color:var(--ink)}
+label{display:block;font-weight:700;margin:12px 0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-weight:700;border:3px solid var(--ink);border-radius:999px;padding:8px 16px;background:#fff;cursor:pointer;color:var(--ink)}
+.chip.on{background:var(--blue)}
+.err{background:#ffe1dd;border:3px solid #c4574c;border-radius:14px;padding:10px 14px;margin:12px 0;font-weight:700}
+.warn{background:#fff0c2;border:3px dashed var(--ink);border-radius:14px;padding:10px 14px;margin:12px 0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.lvl{display:flex;gap:14px;align-items:center}
+.lvl .ic{font-size:3.2rem;line-height:1}
+.bar{height:20px;border:3px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden;margin:6px 0 2px}
+.bar>i{display:block;height:100%;background:var(--green);width:0}
+.task .ttl{font-weight:900;font-size:1.25rem}
+.task .note{color:#6b5546;margin:2px 0 8px}
+.dots{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.dot{width:26px;height:26px;border:3px solid var(--ink);border-radius:50%;background:#fff}
+.dot.on{background:var(--yellow)}
+.task.done{background:#eefaf0}
+.badge{display:inline-block;background:var(--green);border:3px solid var(--ink);border-radius:999px;padding:4px 14px;font-weight:900}
+.mini{font-size:.9rem;color:#8a7260}
+.tabs{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+.tabs .chip.on{background:var(--yellow)}
+.tbl{width:100%;border-collapse:collapse;font-size:.95rem}
+.tbl th,.tbl td{border-bottom:2px solid var(--grey);padding:8px 6px;text-align:left;vertical-align:middle}
+.tbl th{font-weight:900;background:#fbf0d3}
+.scroll{overflow-x:auto}
+.idle{color:#c4574c;font-weight:900}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{text-align:center;border:3px solid var(--ink);border-radius:16px;padding:8px;background:#fff}
+.stat b{font-size:1.5rem;display:block}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.modal{position:fixed;inset:0;background:rgba(74,52,38,.55);display:flex;align-items:center;justify-content:center;padding:12px;z-index:50;overflow-y:auto}
+.modal .card{max-width:460px;width:100%;margin:0}
+.toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);background:var(--yellow);border:3px solid var(--ink);border-radius:22px;box-shadow:4px 4px 0 var(--ink);padding:16px 26px;font-weight:900;font-size:1.4rem;z-index:80;text-align:center;animation:pop .35s}
+@keyframes pop{from{transform:translateX(-50%) scale(.6);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
+.fly{position:fixed;bottom:-30px;font-size:2rem;z-index:75;animation:fly 2.2s ease-out forwards;pointer-events:none}
+@keyframes fly{to{transform:translateY(-110vh) rotate(40deg);opacity:0}}
+/* 收音面板 */
+.nrow{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.nchip{min-width:44px;text-align:center;border:3px solid var(--ink);border-radius:14px;padding:4px 8px;background:#fff;font-weight:900;font-size:1.15rem;line-height:1.2}
+.nchip small{display:block;font-size:.6rem;font-weight:700;color:#8a7260}
+.nchip.on{background:var(--yellow);transform:translateY(-3px)}
+.nchip.ok{background:var(--green)}
+.nchip.miss{background:#d9cfc0;color:#8a7260;text-decoration:line-through}
+.nchip.rest{background:#f3ecdc;color:#9c8b78;border-style:dashed}
+.gauge{position:relative;height:28px;border:3px solid var(--ink);border-radius:999px;background:#fff;margin:10px 0 4px;overflow:hidden}
+.gauge .zone{position:absolute;top:0;bottom:0;left:16.67%;width:66.66%;background:#cfeed8}
+.gauge .needle{position:absolute;top:2px;bottom:2px;width:6px;margin-left:-3px;border-radius:3px;background:var(--ink);left:50%;transition:left .08s;opacity:.15}
+.heard{font-weight:900;font-size:1.2rem;text-align:center;min-height:1.8em}
+.pmsg{text-align:center;font-weight:900;min-height:1.6em;margin:4px 0}
+.count{font-size:3rem;text-align:center;font-weight:900;min-height:1.2em}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<datalist id="groupList"></datalist>
+<script src="core.js"></script>
+<script src="firebase-config.js"></script>
+<script src="student-auth.js"></script>
+<script src="student-data.js"></script>
+<script>
+const { SEMI, NAMES, NUMS, C5, freqOf, centsBetween, detectPitch, Judge, parseNotes } = OPC;
+const $app = document.getElementById('app');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ls = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+function fillGroupList(list){
+  document.getElementById('groupList').innerHTML = (list || []).map(g => '<option value="' + esc(g) + '">').join('');
+}
+
+let SVC = null, DATA = null;
+let S = { me: null, login: { name: ls.get('op_name') || '', group: ls.get('op_group') || '', mode: 'login', err: '', busy: false, ack: false, pw: '' }, showPast: false, busy: false, cfgErr: '' };
+
+async function api(action, data){
+  if (!DATA) throw new Error('請重新登入');
+  if (action === 'me') return { me: await DATA.me() };
+  if (action === 'practice') return await DATA.practice(data.taskId, data.pct);
+  throw new Error('未知的動作');
+}
+/* ---------- 慶祝效果 ---------- */
+function toast(msg, ms){
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
+  setTimeout(() => t.remove(), ms || 2200);
+}
+function confetti(){
+  const em = ['🎵','⭐','🎶','🌟','🎉'];
+  for (let i = 0; i < 16; i++){
+    const s = document.createElement('span'); s.className = 'fly'; s.textContent = em[i % em.length];
+    s.style.left = (Math.random() * 92) + 'vw'; s.style.animationDelay = (Math.random() * .5) + 's';
+    document.body.appendChild(s); setTimeout(() => s.remove(), 3000);
+  }
+}
+function modal(title, bodyHtml, okText, onOk){
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = '<div class="card"><h2 style="margin-top:0">' + esc(title) + '</h2>' + bodyHtml +
+    '<div class="err" style="display:none" id="mErr"></div><div class="row2" style="margin-top:14px"><button class="btn" id="mNo">取消</button><button class="btn green" id="mOk">' + esc(okText) + '</button></div></div>';
+  document.body.appendChild(m);
+  m.querySelector('#mNo').onclick = () => m.remove();
+  m.querySelector('#mOk').onclick = async () => {
+    try { await onOk(m); m.remove(); }
+    catch(e){ const x = m.querySelector('#mErr'); x.style.display = 'block'; x.textContent = e.message; }
+  };
+  const f = m.querySelector('input'); if (f) f.focus();
+}
+
+
+/* ====================== 學生端 ====================== */
+const AUTH_MSG = {
+  badname: '姓名請填 1～16 個字，不要有特殊符號（< > & " \' / \\）',
+  badgroup: '分部請填 1～20 個字（你是哪一間分校），不要有特殊符號',
+  weak: '密碼至少要 4 個字',
+  noack: '請先勾選最下面的確認',
+  dup: '這個「姓名＋分部」已經有人建立過了，請按上面的「登入」。忘記密碼的話，請老師幫你重設。',
+  wrong: '姓名、分部或密碼不對。第一次來的話，請按上面的「第一次來」。',
+  many: '試太多次了，請等一下再試',
+  net: '連不上網路，請檢查網路再試一次',
+  config: '老師還沒完成 Firebase 設定，現在無法登入。',
+  denied: '這個帳號現在不能使用，請告訴老師',
+  nodoc: '找不到你的資料，請告訴老師（可能剛被重設，請按「第一次來」設定新密碼）',
+  other: '發生錯誤，請稍後再試'
+};
+const authMsg = e => (e && e.code === 'config' && e.message && e.message.length < 80 && !/^auth\//.test(e.message) ? '老師還沒完成設定：' + e.message : AUTH_MSG[e && e.code] || (e && e.message) || AUTH_MSG.other);
+
+function viewLogin(){
+  const L = S.login, cre = L.mode === 'create';
+  $app.innerHTML = `
+    <h1>🎵 陶笛回家練習</h1>
+    <p class="sub">登入後，用麥克風吹給我聽，練習就算數！</p>
+    ${S.cfgErr ? '<div class="warn">⚠️ ' + esc(S.cfgErr) + '</div>' : ''}
+    <div class="tabs"><button class="chip ${!cre ? 'on' : ''}" data-act="setMode" data-v="login">登入</button><button class="chip ${cre ? 'on' : ''}" data-act="setMode" data-v="create">第一次來（建立帳號）</button></div>
+    <div class="card">
+      <label>姓名</label>
+      <input id="fName" value="${esc(L.name)}" placeholder="例如：王小明" autocomplete="off">
+      <label>分部（你在哪一間分校？）</label>
+      <input id="fGroup" list="groupList" value="${esc(L.group)}" placeholder="例如：鳳山分校" autocomplete="off">
+      <label>${cre ? '設定你的密碼（至少 4 個字，自己記好）' : '密碼'}</label>
+      <input id="fPw" type="password" value="${esc(L.pw)}" placeholder="${cre ? '自己設一個密碼' : '你的密碼'}" autocomplete="off">
+      ${cre ? '<label style="display:flex;gap:10px;align-items:flex-start;font-weight:700"><input id="fAck" type="checkbox" style="width:26px;height:26px;flex:none" ' + (L.ack ? 'checked' : '') + '><span>我已經告訴爸爸媽媽，我要在家用麥克風練習陶笛</span></label><div class="warn">老師重設過密碼的同學，也是選這裡，用<b>同樣的姓名和分部</b>設新密碼，積分都還在。</div>' : ''}
+      ${L.err ? '<div class="err">' + esc(L.err) + '</div>' : ''}
+      <div style="margin-top:14px">
+        <button class="btn ${cre ? 'green' : ''} big" data-act="${cre ? 'register' : 'login'}" ${L.busy ? 'disabled' : ''}>${L.busy ? '請稍等…' : cre ? '建立帳號並進入' : '進入 🎶'}</button>
+      </div>
+    </div>
+    <p class="mini" style="text-align:center">🎤 要用手機的預設瀏覽器（Safari／Chrome）開，<br>在 LINE、FB、IG 裡面開可能不能用麥克風。</p>
+    <p class="mini" style="text-align:center"><a href="admin.html" style="color:#8a7260">老師後台</a></p>`;
+}
+
+function readLoginForm(){
+  const L = S.login, n = document.getElementById('fName'), g = document.getElementById('fGroup'), p = document.getElementById('fPw'), a = document.getElementById('fAck');
+  if (n) L.name = n.value.trim();
+  if (g) L.group = g.value.trim();
+  if (a) L.ack = a.checked;
+  if (p) L.pw = p.value;
+  return L.pw;
+}
+
+async function doLogin(create){
+  const pw = readLoginForm(), L = S.login;
+  if (L.busy) return;
+  L.err = '';
+  if (!L.name) { L.err = '請輸入姓名'; return viewLogin(); }
+  if (!L.group) { L.err = '請填分部（你是哪一間分校）'; return viewLogin(); }
+  if (!pw) { L.err = '請輸入密碼'; return viewLogin(); }
+  L.busy = true; viewLogin();
+  try {
+    if (!SVC) SVC = await OPStudent.service();
+    const who = create ? await SVC.register(L.name, L.group, pw, L.ack) : await SVC.login(L.name, L.group, pw);
+    ls.set('op_name', L.name); ls.set('op_group', L.group);
+    L.busy = false; L.err = ''; L.ack = false; L.pw = ''; L.mode = 'login';
+    await enter(who);
+  } catch(e){ L.err = authMsg(e); L.busy = false; viewLogin(); }
+}
+
+async function enter(who){
+  DATA = OPStudentData.make(SVC, who);
+  await loadMe();
+}
+
+async function loadMe(){
+  try { const j = await api('me'); S.me = j.me; viewStudent(); }
+  catch(e){ S.me = null; DATA = null; try { SVC && await SVC.logout(); } catch(x){} S.login.err = e.message === '請重新登入' ? '' : e.message; viewLogin(); }
+}
+
+function noteHtml(n){ return n === 0 ? '休' : NUMS[n - 1]; }
+
+function dots(t){
+  if (t.target > 12) return `<div class="bar"><i style="width:${Math.round(t.count / t.target * 100)}%"></i></div>`;
+  let h = '<div class="dots">'; for (let i = 0; i < t.target; i++) h += `<span class="dot ${i < t.count ? 'on' : ''}"></span>`; return h + '</div>';
+}
+
+function taskCard(t, m){
+  const cap = m.dailyCap, full = t.todayCount >= cap;
+  const hasNotes = t.notes && t.notes.length;
+  const how = !hasNotes ? '自由吹奏：對著麥克風穩定吹一段' : (t.bpm > 0 ? '跟著節拍吹（' + t.bpm + ' BPM）' : '照順序把每個音吹準');
+  const stages = t.bpm > 0 && hasNotes ? '<div class="mini">速度階段：' + m.speeds.map(p => p + '%' + (t.bestPct >= p ? '✅' : '')).join('　') + '</div>' : '';
+  return `<div class="card task ${t.done ? 'done' : ''}">
+    <div class="ttl">${esc(t.title)}</div>
+    ${t.note ? `<div class="note">${esc(t.note)}</div>` : ''}
+    ${hasNotes ? '<div class="nrow">' + t.notes.map(x => `<span class="nchip ${x.n === 0 ? 'rest' : ''}">${noteHtml(x.n)}${x.b !== 1 ? '<small>' + x.b + '拍</small>' : ''}</span>`).join('') + '</div>' : ''}
+    <div class="mini">🎤 ${how}　·　${esc(t.startDate.slice(5))} ～ ${esc(t.endDate.slice(5))}</div>
+    ${stages}
+    ${dots(t)}
+    <div class="mini" style="margin-bottom:10px">${t.count} / ${t.target} 次　·　完成可得 ${t.points} 分${!t.done ? `　·　今天已記 ${t.todayCount}/${cap}` : ''}</div>
+    ${t.done ? '<span class="badge">🌟 已完成！</span>'
+      : t.status === 'current'
+        ? `<button class="btn big" data-act="mic" data-id="${esc(t.id)}" ${full ? 'disabled' : ''}>${full ? '今天記滿囉，明天再來' : '🎤 開始吹奏'}</button>`
+        : '<span class="mini">這個任務已經結束</span>'}
+  </div>`;
+}
+
+function viewStudent(){
+  const m = S.me, L = m.level;
+  const pct = L.nextMin ? Math.min(100, Math.round((m.points - L.min) / (L.nextMin - L.min) * 100)) : 100;
+  const cur = m.tasks.filter(t => t.status === 'current'), past = m.tasks.filter(t => t.status !== 'current');
+  $app.innerHTML = `
+    <div class="top"><div><h1>${esc(m.name)}</h1><div class="sub">${esc(m.group)}</div></div><button class="btn small" data-act="logout">登出</button></div>
+    <div class="card"><div class="lvl"><div class="ic">${L.icon}</div><div style="flex:1">
+      <div style="font-weight:900;font-size:1.3rem">Lv.${L.index} ${esc(L.name)}</div>
+      <div class="mini">累計 ${m.points} 分${L.nextMin ? `　·　再 ${L.nextMin - m.points} 分升「${esc(L.nextName)}」` : '　·　已是最高等級！'}</div>
+      <div class="bar"><i style="width:${pct}%"></i></div></div></div></div>
+    <h2>📋 這週的練習任務</h2>
+    ${cur.length ? cur.map(t => taskCard(t, m)).join('') : '<div class="card">這週老師還沒有派任務，先好好休息 ☺️</div>'}
+    ${past.length ? `<button class="link" data-act="togglePast">${S.showPast ? '▼ 收起' : '▶ 看以前的任務'}（${past.length}）</button>${S.showPast ? past.map(t => taskCard(t, m)).join('') : ''}` : ''}`;
+}
+
+async function submitPractice(id, pct){
+  if (S.busy) return; S.busy = true;
+  try {
+    const j = await api('practice', { token: S.token, taskId: id, pct: pct });
+    S.me = j.me; viewStudent();
+    if (j.leveledUp){ toast('🎊 升級了！' + j.me.level.icon + ' ' + j.me.level.name, 3000); confetti(); }
+    else if (j.awarded){ toast('🌟 任務完成！+' + j.awarded + ' 分', 2600); confetti(); }
+    else { toast('過關！+1 🎵', 1400); confetti(); }
+  } catch(e){ toast(e.message, 2800); if (/重新登入/.test(e.message)) { S.me = null; viewLogin(); } }
+  S.busy = false;
+}
+
+/* ====================== 收音面板 ====================== */
+let P = null;   // 目前的練習面板狀態
+
+function nearestDegree(f){
+  const semis = 12 * Math.log2(f / C5);
+  let bi = 0, bd = 99;
+  SEMI.forEach((s, i) => { const d = Math.abs(semis - s); if (d < bd) { bd = d; bi = i; } });
+  return { i: bi, cents: (semis - SEMI[bi]) * 100 };
+}
+
+function openPractice(id){
+  const m = S.me, task = m.tasks.find(t => t.id === id); if (!task) return;
+  const paced = task.bpm > 0 && task.notes.length;
+  const next = m.speeds.find(p => p > task.bestPct);
+  P = { task: task, st: m.settings, speeds: m.speeds, pct: paced ? (next || m.speeds[m.speeds.length - 1]) : 100,
+        state: 'ready', judge: null, ctx: null, stream: null, raf: 0, demoCtx: null, timers: [], hist: [], clicks: [], clickBase: 0 };
+  const el = document.createElement('div'); el.className = 'modal'; el.id = 'pm';
+  el.innerHTML = '<div class="card" id="pCard"></div>';
+  document.body.appendChild(el);
+  renderPanel();
+}
+
+function panelItems(){
+  const t = P.task;
+  if (P.judge) return P.judge.items.map(x => ({ n: x.n, b: x.b, res: x.res }));
+  const src = t.notes.length ? (t.bpm > 0 ? t.notes : t.notes.filter(x => x.n > 0)) : [];
+  return src.map(x => ({ n: x.n, b: x.b, res: x.n === 0 ? 'rest' : '' }));
+}
+
+function renderPanel(){
+  const card = document.getElementById('pCard'); if (!card || !P) return;
+  const t = P.task, st = P.st, items = panelItems(), paced = t.bpm > 0 && t.notes.length, free = !t.notes.length;
+  const how = free ? `對著麥克風，穩定吹出聲音，累積 ${st.freeSec} 秒就過關。` :
+    paced ? `先數 4 拍預備，然後跟著節拍把音吹出來。可以漏掉 ${Math.floor(items.filter(x => x.n > 0).length * st.missPct / 100)} 個音。` :
+    `照順序把每個音吹準，每個音吹到亮綠色就換下一個。可以漏掉 ${Math.floor(items.length * st.missPct / 100)} 個音。`;
+  let h = `<div class="top"><h2 style="margin:0">${esc(t.title)}</h2><button class="btn small" data-pact="close">✕</button></div>`;
+  if (P.state === 'ready'){
+    h += `<p class="mini">${how}<br>🎧 戴耳機會更準；找個安靜的地方。</p>`;
+    if (paced) h += `<label>選速度</label><div class="chips">${P.speeds.map(p => `<button class="chip ${P.pct === p ? 'on' : ''}" data-pact="pct" data-v="${p}">${p}%${t.bestPct >= p ? ' ✅' : ''}</button>`).join('')}</div>
+      <p class="mini">${t.bpm} BPM × ${P.pct}% ＝ 每分鐘 ${Math.round(t.bpm * P.pct / 100)} 拍</p>`;
+  }
+  if (items.length) h += '<div class="nrow" id="pNotes">' + items.map((x, i) => `<span class="nchip ${x.res}" data-i="${i}">${noteHtml(x.n)}${x.b !== 1 && x.n >= 0 && paced ? '<small>' + x.b + '拍</small>' : ''}</span>`).join('') + '</div>';
+  h += `<div class="count" id="pCount"></div>
+    <div class="gauge"><div class="zone" id="pZone"></div><div class="needle" id="pNeedle"></div></div>
+    <div class="heard" id="pHeard">${P.state === 'ready' ? '準備好了就按「開始吹」' : ''}</div>
+    <div class="bar"><i id="pBar"></i></div>
+    <div class="pmsg" id="pMsg"></div>`;
+  if (P.state === 'ready') h += `<div class="row2" style="margin-top:12px">${free ? '<span></span>' : '<button class="btn blue" data-pact="demo">🔊 聽範例</button>'}<button class="btn green" data-pact="start">🎤 開始吹</button></div>`;
+  else if (P.state === 'run') h += '<button class="btn" style="width:100%;margin-top:10px" data-pact="stop">停止</button>';
+  else if (P.state === 'fail') h += '<div class="row2" style="margin-top:12px"><button class="btn" data-pact="close">先不練了</button><button class="btn green" data-pact="again">再試一次</button></div>';
+  else if (P.state === 'nomic') h += '<button class="btn" style="width:100%;margin-top:10px" data-pact="close">知道了</button>';
+  card.innerHTML = h;
+  const zone = document.getElementById('pZone');   // 綠色區＝可以接受的範圍（寬鬆度）
+  if (zone){ zone.style.left = '16.67%'; zone.style.width = '66.66%'; }
+  if (P.state === 'fail') setMsg(P.failMsg || '差一點！');
+  if (P.state === 'nomic') setMsg('');
+}
+function setMsg(s){ const e = document.getElementById('pMsg'); if (e) e.textContent = s; }
+
+function stopAudio(){
+  if (!P) return;
+  cancelAnimationFrame(P.raf); P.raf = 0;
+  P.timers.forEach(clearTimeout); P.timers = [];
+  if (P.stream) { P.stream.getTracks().forEach(t => t.stop()); P.stream = null; }
+  if (P.ctx) { try { P.ctx.close(); } catch(e){} P.ctx = null; }
+  if (P.demoCtx) { try { P.demoCtx.close(); } catch(e){} P.demoCtx = null; }
+}
+function closePanel(){
+  stopAudio(); P = null;
+  const el = document.getElementById('pm'); if (el) el.remove();
+}
+
+function playDemo(){
+  const t = P.task, items = panelItems();
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (P.demoCtx) { try { P.demoCtx.close(); } catch(e){} }
+  const ctx = new AC(); P.demoCtx = ctx; ctx.resume();
+  const paced = t.bpm > 0, spb = paced ? 60 / (t.bpm * P.pct / 100) : 0.7;
+  let at = ctx.currentTime + 0.2, ms = 200;
+  P.timers.forEach(clearTimeout); P.timers = [];
+  const chips = () => Array.from(document.querySelectorAll('#pNotes .nchip'));
+  items.forEach((x, i) => {
+    const dur = (paced ? x.b : 1) * spb;
+    if (x.n > 0){
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = freqOf(x.n); o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(0.3, at + 0.03);
+      g.gain.setValueAtTime(0.3, at + dur * 0.8); g.gain.linearRampToValueAtTime(0, at + dur * 0.95);
+      o.start(at); o.stop(at + dur);
+    }
+    P.timers.push(setTimeout(() => { chips().forEach((c, k) => c.classList.toggle('on', k === i)); }, ms));
+    at += dur; ms += dur * 1000;
+  });
+  P.timers.push(setTimeout(() => { chips().forEach(c => c.classList.remove('on')); }, ms + 100));
+}
+
+async function startRun(){
+  if (!P || P.state === 'run') return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  P.timers.forEach(clearTimeout); P.timers = [];
+  if (P.demoCtx) { try { P.demoCtx.close(); } catch(e){} P.demoCtx = null; }
+  const ctx = new AC(); ctx.resume();          // 要在點擊當下建立（iPhone 需要）
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  } catch(e){
+    try { ctx.close(); } catch(x){}
+    if (!P) return;
+    P.state = 'nomic'; renderPanel();
+    document.getElementById('pHeard').innerHTML = '🎤 麥克風打不開<br><span class="mini">請用手機預設瀏覽器（Safari／Chrome）開，不要在 LINE／FB／IG 裡開；跳出詢問時請按「允許」麥克風。</span>';
+    return;
+  }
+  if (!P) { stream.getTracks().forEach(t => t.stop()); try { ctx.close(); } catch(x){} return; }
+  const an = ctx.createAnalyser(); an.fftSize = 2048;
+  ctx.createMediaStreamSource(stream).connect(an);
+  const buf = new Float32Array(an.fftSize);
+  P.ctx = ctx; P.stream = stream; P.state = 'run'; P.hist = [];
+  const j = new Judge(P.task, P.st, P.pct); P.judge = j;
+  renderPanel();
+  const paced = j.mode === 'paced';
+  const perfStart = performance.now() + 300;
+  if (paced){
+    j.start(perfStart);
+    if (P.st.clickOn){                          // 節拍聲：低沉的「噠」（220Hz，在偵測範圍之外）
+      const base = ctx.currentTime + 0.3;
+      for (let k = 0; k < j.totalBeats; k++){
+        const o = ctx.createOscillator(), g = ctx.createGain(), ct = base + k * j.spb / 1000;
+        o.frequency.value = k < 4 ? 260 : 220; o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.0001, ct); g.gain.exponentialRampToValueAtTime(0.25, ct + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, ct + 0.07);
+        o.start(ct); o.stop(ct + 0.1);
+      }
+    }
+  }
+  const tol = P.st.tol;
+  const loop = () => {
+    if (!P || P.state !== 'run') return;
+    const now = performance.now();
+    an.getFloatTimeDomainData(buf);
+    const r = detectPitch(buf, ctx.sampleRate);
+    let f = r.f || 0;
+    if (paced && P.st.clickOn){                 // 節拍聲那一瞬間不聽，避免被當成吹奏
+      const tt = now - perfStart, k = Math.round(tt / j.spb);
+      if (k >= 0 && k < j.totalBeats && Math.abs(tt - k * j.spb) < 80) f = 0;
+    }
+    P.hist.push(f); if (P.hist.length > 3) P.hist.shift();
+    const on = P.hist.filter(x => x > 0);
+    if (on.length >= 2){ on.sort((a, b) => a - b); f = on[on.length >> 1]; } else f = 0;
+    j.step(now, f);
+    updateRun(j, f, tol);
+    if (j.done){ endRun(j); return; }
+    P.raf = requestAnimationFrame(loop);
+  };
+  P.raf = requestAnimationFrame(loop);
+}
+
+function updateRun(j, f, tol){
+  const chips = document.querySelectorAll('#pNotes .nchip');
+  if (j.mode === 'hold') chips.forEach((c, i) => { c.className = 'nchip ' + (j.items[i].res || (i === j.idx ? 'on' : '')); });
+  else if (j.mode === 'paced') chips.forEach((c, i) => { const it = j.items[i]; c.className = 'nchip ' + (it.res === 'rest' ? 'rest' : it.res || (i === j.cur ? 'on' : '')); });
+  const cnt = document.getElementById('pCount');
+  if (cnt){
+    if (j.mode === 'paced' && j.t < 4 * j.spb) cnt.textContent = j.t < 0 ? '預備…' : String(4 - Math.floor(j.t / j.spb));
+    else cnt.textContent = '';
+  }
+  const heard = document.getElementById('pHeard'), nd = document.getElementById('pNeedle');
+  if (f > 0){
+    const d = nearestDegree(f), off = Math.abs(d.cents) <= 25 ? '剛好' : d.cents > 0 ? '偏高' : '偏低';
+    heard.textContent = '聽到：' + NAMES[d.i] + '（' + off + '）';
+    if (j.cents !== null){
+      const x = Math.max(-1, Math.min(1, j.cents / (tol * 1.5)));
+      nd.style.left = (50 + x * 50) + '%'; nd.style.opacity = '1';
+    } else nd.style.opacity = '.15';
+  } else { heard.textContent = j.mode === 'paced' && j.t < 0 ? '' : '（沒聽到聲音）'; nd.style.opacity = '.15'; }
+  const bar = document.getElementById('pBar'); if (bar) bar.style.width = Math.round(j.progress * 100) + '%';
+  if (j.mode === 'hold') setMsg('第 ' + Math.min(j.idx + 1, j.items.length) + ' / ' + j.items.length + ' 個音' + (j.misses ? '　漏了 ' + j.misses + ' 個' : ''));
+  else if (j.mode === 'paced') setMsg(j.misses ? '漏了 ' + j.misses + ' 個音（最多可漏 ' + j.allow + '）' : '');
+  else setMsg('穩定地吹…');
+}
+
+function endRun(j){
+  const task = P.task, pct = P.pct;
+  stopAudio();
+  if (j.ok){
+    closePanel();
+    submitPractice(task.id, pct);
+  } else {
+    const missed = j.items.map((x, i) => x.res === 'miss' ? i + 1 : 0).filter(Boolean);
+    P.state = 'fail';
+    P.failMsg = (j.msg || '差一點！') + (missed.length ? '（第 ' + missed.join('、') + ' 個音）' : '') + '，再試一次吧！';
+    P.judge = null; renderPanel();
+  }
+}
+
+
+/* ====================== 事件 ====================== */
+document.addEventListener('click', async ev => {
+  const pa = ev.target.closest('[data-pact]');
+  if (pa && P){
+    const a = pa.dataset.pact;
+    if (a === 'close') return closePanel();
+    if (a === 'pct'){ P.pct = Number(pa.dataset.v); return renderPanel(); }
+    if (a === 'demo') return playDemo();
+    if (a === 'start' || a === 'again'){ if (a === 'again') { P.state = 'ready'; P.judge = null; renderPanel(); } return startRun(); }
+    if (a === 'stop'){ stopAudio(); P.state = 'ready'; P.judge = null; return renderPanel(); }
+    return;
+  }
+  const el = ev.target.closest('[data-act]'); if (!el) return;
+  const act = el.dataset.act, id = el.dataset.id, v = el.dataset.v;
+  switch (act){
+    case 'setMode': readLoginForm(); S.login.mode = v; S.login.pw = ''; S.login.err = ''; return viewLogin();
+    case 'login': return doLogin(false);
+    case 'register': return doLogin(true);
+    case 'logout': S.me = null; DATA = null; try { await SVC.logout(); } catch(e){} return viewLogin();
+    case 'mic': return openPractice(id);
+    case 'togglePast': S.showPast = !S.showPast; return viewStudent();
+  }
+});
+
+async function start(){
+  $app.innerHTML = '<p class="sub" style="text-align:center;margin-top:80px">載入中… 🎵</p>';
+  try { SVC = await OPStudent.service(); }
+  catch(e){ S.cfgErr = e.code === 'config' ? (e.message || '還沒有設定 Firebase') : '連不上 Firebase，請檢查網路'; return viewLogin(); }
+  try { fillGroupList(await OPStudentData.make(SVC, { sid: '', name: '', group: '' }).groups()); } catch(e){}
+  let who = null;
+  try { who = await SVC.current(); } catch(e){}
+  if (who) return enter(who);
+  viewLogin();
+}
+start();
+</script>
+</body>
+</html>

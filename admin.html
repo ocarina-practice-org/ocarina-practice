@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>陶笛回家練習｜老師後台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff6e0;--ink:#4a3426;--card:#fffdf5;--orange:#ff9b5e;--green:#6cc686;--blue:#6bb5ee;--pink:#f6a9bd;--yellow:#ffd95a;--grey:#e7dccb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);background-image:radial-gradient(#f3e4bd 1.5px,transparent 1.5px);background-size:22px 22px;color:var(--ink);font-family:"Zen Maru Gothic","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;font-size:17px;line-height:1.5}
+#app{max-width:720px;margin:0 auto;padding:14px 14px 60px}
+h1{font-size:1.7rem;margin:6px 0 2px;font-weight:900}
+h2{font-size:1.25rem;margin:18px 0 6px;font-weight:900}
+.sub{color:#8a7260;margin:0 0 8px}
+.card{background:var(--card);border:3px solid var(--ink);border-radius:22px;box-shadow:4px 4px 0 var(--ink);padding:16px;margin:14px 0}
+.btn{font:inherit;font-weight:900;font-size:1.1rem;border:3px solid var(--ink);border-radius:16px;padding:12px 18px;background:var(--yellow);color:var(--ink);box-shadow:3px 3px 0 var(--ink);cursor:pointer}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn:disabled{background:var(--grey);color:#9c8b78;cursor:not-allowed;box-shadow:none}
+.btn.big{width:100%;font-size:1.3rem;padding:16px;background:var(--orange)}
+.btn.green{background:var(--green)}.btn.blue{background:var(--blue)}.btn.small{font-size:.9rem;padding:6px 12px;box-shadow:2px 2px 0 var(--ink)}
+.btn.red{background:#f28b82}
+.link{background:none;border:none;font:inherit;color:#8a7260;text-decoration:underline;cursor:pointer;padding:6px 0}
+input,select,textarea{font:inherit;width:100%;border:3px solid var(--ink);border-radius:14px;padding:11px 14px;background:#fff;color:var(--ink)}
+label{display:block;font-weight:700;margin:12px 0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-weight:700;border:3px solid var(--ink);border-radius:999px;padding:8px 16px;background:#fff;cursor:pointer;color:var(--ink)}
+.chip.on{background:var(--blue)}
+.err{background:#ffe1dd;border:3px solid #c4574c;border-radius:14px;padding:10px 14px;margin:12px 0;font-weight:700}
+.warn{background:#fff0c2;border:3px dashed var(--ink);border-radius:14px;padding:10px 14px;margin:12px 0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.lvl{display:flex;gap:14px;align-items:center}
+.lvl .ic{font-size:3.2rem;line-height:1}
+.bar{height:20px;border:3px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden;margin:6px 0 2px}
+.bar>i{display:block;height:100%;background:var(--green);width:0}
+.task .ttl{font-weight:900;font-size:1.25rem}
+.task .note{color:#6b5546;margin:2px 0 8px}
+.dots{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.dot{width:26px;height:26px;border:3px solid var(--ink);border-radius:50%;background:#fff}
+.dot.on{background:var(--yellow)}
+.task.done{background:#eefaf0}
+.badge{display:inline-block;background:var(--green);border:3px solid var(--ink);border-radius:999px;padding:4px 14px;font-weight:900}
+.mini{font-size:.9rem;color:#8a7260}
+.tabs{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+.tabs .chip.on{background:var(--yellow)}
+.tbl{width:100%;border-collapse:collapse;font-size:.95rem}
+.tbl th,.tbl td{border-bottom:2px solid var(--grey);padding:8px 6px;text-align:left;vertical-align:middle}
+.tbl th{font-weight:900;background:#fbf0d3}
+.scroll{overflow-x:auto}
+.idle{color:#c4574c;font-weight:900}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{text-align:center;border:3px solid var(--ink);border-radius:16px;padding:8px;background:#fff}
+.stat b{font-size:1.5rem;display:block}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.modal{position:fixed;inset:0;background:rgba(74,52,38,.55);display:flex;align-items:center;justify-content:center;padding:12px;z-index:50;overflow-y:auto}
+.modal .card{max-width:460px;width:100%;margin:0}
+.toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);background:var(--yellow);border:3px solid var(--ink);border-radius:22px;box-shadow:4px 4px 0 var(--ink);padding:16px 26px;font-weight:900;font-size:1.4rem;z-index:80;text-align:center;animation:pop .35s}
+@keyframes pop{from{transform:translateX(-50%) scale(.6);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
+.fly{position:fixed;bottom:-30px;font-size:2rem;z-index:75;animation:fly 2.2s ease-out forwards;pointer-events:none}
+@keyframes fly{to{transform:translateY(-110vh) rotate(40deg);opacity:0}}
+/* 收音面板 */
+.nrow{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.nchip{min-width:44px;text-align:center;border:3px solid var(--ink);border-radius:14px;padding:4px 8px;background:#fff;font-weight:900;font-size:1.15rem;line-height:1.2}
+.nchip small{display:block;font-size:.6rem;font-weight:700;color:#8a7260}
+.nchip.on{background:var(--yellow);transform:translateY(-3px)}
+.nchip.ok{background:var(--green)}
+.nchip.miss{background:#d9cfc0;color:#8a7260;text-decoration:line-through}
+.nchip.rest{background:#f3ecdc;color:#9c8b78;border-style:dashed}
+.gauge{position:relative;height:28px;border:3px solid var(--ink);border-radius:999px;background:#fff;margin:10px 0 4px;overflow:hidden}
+.gauge .zone{position:absolute;top:0;bottom:0;left:16.67%;width:66.66%;background:#cfeed8}
+.gauge .needle{position:absolute;top:2px;bottom:2px;width:6px;margin-left:-3px;border-radius:3px;background:var(--ink);left:50%;transition:left .08s;opacity:.15}
+.heard{font-weight:900;font-size:1.2rem;text-align:center;min-height:1.8em}
+.pmsg{text-align:center;font-weight:900;min-height:1.6em;margin:4px 0}
+.count{font-size:3rem;text-align:center;font-weight:900;min-height:1.2em}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<datalist id="groupList"></datalist>
+<script src="core.js"></script>
+<script src="firebase-config.js"></script>
+<script src="student-auth.js"></script>
+<script src="admin-data.js"></script>
+<script>
+const $app = document.getElementById('app');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ls = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+function fillGroupList(list){
+  document.getElementById('groupList').innerHTML = (list || []).map(g => '<option value="' + esc(g) + '">').join('');
+}
+
+let SVC = null, AD = null;
+let A = { data: null, tab: 'students', group: '', idleOnly: false, edit: null, open: null, logs: null, err: '', setErr: '', cfgErr: '' };
+
+async function api(action, d){
+  d = d || {};
+  switch (action){
+    case 'adminLogs': A.data = await AD.load(); return { logs: A.data.logs };
+    case 'saveTask': return { id: await AD.saveTask(d.task) };
+    case 'deleteTask': return await AD.deleteTask(d.id);
+    case 'saveSettings': return { settings: await AD.saveSettings(d.settings) };
+    case 'renameGroup': return await AD.renameGroup(d.from, d.to);
+    case 'resetPassword': return await AD.resetPassword(d.id);
+    case 'adjustPoints': return await AD.adjustPoints(d.id, d.delta, d.reason);
+    case 'deleteStudent': return await AD.deleteStudent(d.id);
+  }
+  throw new Error('未知的動作');
+}
+/* ---------- 慶祝效果 ---------- */
+function toast(msg, ms){
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
+  setTimeout(() => t.remove(), ms || 2200);
+}
+function confetti(){
+  const em = ['🎵','⭐','🎶','🌟','🎉'];
+  for (let i = 0; i < 16; i++){
+    const s = document.createElement('span'); s.className = 'fly'; s.textContent = em[i % em.length];
+    s.style.left = (Math.random() * 92) + 'vw'; s.style.animationDelay = (Math.random() * .5) + 's';
+    document.body.appendChild(s); setTimeout(() => s.remove(), 3000);
+  }
+}
+function modal(title, bodyHtml, okText, onOk){
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = '<div class="card"><h2 style="margin-top:0">' + esc(title) + '</h2>' + bodyHtml +
+    '<div class="err" style="display:none" id="mErr"></div><div class="row2" style="margin-top:14px"><button class="btn" id="mNo">取消</button><button class="btn green" id="mOk">' + esc(okText) + '</button></div></div>';
+  document.body.appendChild(m);
+  m.querySelector('#mNo').onclick = () => m.remove();
+  m.querySelector('#mOk').onclick = async () => {
+    try { await onOk(m); m.remove(); }
+    catch(e){ const x = m.querySelector('#mErr'); x.style.display = 'block'; x.textContent = e.message; }
+  };
+  const f = m.querySelector('input'); if (f) f.focus();
+}
+
+
+/* ====================== 老師端 ====================== */
+function viewAdminLogin(){
+  const em = (window.OP_FIREBASE && window.OP_FIREBASE.adminEmail) || '';
+  $app.innerHTML = `
+    <h1>🧑‍🏫 老師後台</h1>
+    ${A.cfgErr ? '<div class="warn">⚠️ ' + esc(A.cfgErr) + '</div>' : ''}
+    <div class="card">
+      <label>老師 Email</label><input id="aEm" type="email" value="${esc(em)}" autocomplete="username">
+      <label>密碼</label><input id="aPw" type="password" autocomplete="current-password">
+      ${A.err ? '<div class="err">' + esc(A.err) + '</div>' : ''}
+      <div style="margin-top:14px"><button class="btn big" data-act="adminLogin">進入後台</button></div>
+    </div>
+    <p style="text-align:center"><a href="index.html" style="color:#8a7260">回學生登入</a></p>`;
+}
+
+async function loadAdmin(){
+  $app.innerHTML = '<p class="sub" style="text-align:center;margin-top:80px">讀取中…</p>';
+  try { A.data = await AD.load(); fillGroupList(A.data.groups); viewAdmin(); }
+  catch(e){ A.err = e.message; viewAdminLogin(); }
+}
+
+function shortDate(s){ return s ? s.slice(5) : '—'; }
+
+function viewAdmin(){
+  const D = A.data;
+  $app.innerHTML = `
+    <div class="top"><h1>🧑‍🏫 老師後台</h1><div><button class="btn small" data-act="reloadAdmin">重新整理</button> <button class="btn small" data-act="adminLogout">登出</button></div></div>
+    <p class="sub">今天 ${esc(D.today)}　·　本週 ${esc(shortDate(D.weekStart))} ～ ${esc(shortDate(D.weekEnd))}</p>
+    <div class="tabs">
+      ${[['students','👦 學生總覽'],['tasks','📋 每週任務'],['settings','⚙️ 放寬設定'],['logs','🕒 練習紀錄']].map(t => `<button class="chip ${A.tab === t[0] ? 'on' : ''}" data-act="tab" data-v="${t[0]}">${t[1]}</button>`).join('')}
+    </div>
+    <div id="adminBody"></div>`;
+  const b = document.getElementById('adminBody');
+  if (A.tab === 'students') b.innerHTML = adminStudents();
+  else if (A.tab === 'tasks') b.innerHTML = adminTasks();
+  else if (A.tab === 'settings') b.innerHTML = adminSettings();
+  else adminLogsView(b);
+}
+
+function adminStudents(){
+  const D = A.data;
+  const list = D.students.filter(s => (!A.group || s.group === A.group) && (!A.idleOnly || s.week === 0))
+    .sort((a, b) => a.group.localeCompare(b.group, 'zh-Hant') || a.name.localeCompare(b.name, 'zh-Hant'));
+  const all = D.students.filter(s => !A.group || s.group === A.group);
+  const active = all.filter(s => s.week > 0).length;
+  const sum = all.reduce((n, s) => n + s.week, 0);
+  return `
+    <div class="stats"><div class="stat"><b>${all.length}</b>學生數</div><div class="stat"><b>${active}</b>本週有練習</div><div class="stat"><b>${sum}</b>本週總次數</div></div>
+    <div class="chips" style="margin:12px 0">
+      <button class="chip ${!A.group ? 'on' : ''}" data-act="filterGroup" data-v="">全部</button>
+      ${D.groups.map(g => `<button class="chip ${A.group === g ? 'on' : ''}" data-act="filterGroup" data-v="${esc(g)}">${esc(g)}</button>`).join('')}
+      <button class="chip ${A.idleOnly ? 'on' : ''}" data-act="toggleIdle">只看本週還沒練的</button>
+      <button class="chip" data-act="renameGroup">✏️ 合併／改分部名稱</button>
+    </div>
+    <div class="card scroll" style="padding:8px"><table class="tbl">
+      <tr><th>姓名</th><th>分部</th><th>等級</th><th>積分</th><th>本週</th><th>累計</th><th>最近練習</th><th></th></tr>
+      ${list.length ? list.map(s => `<tr>
+        <td><b>${esc(s.name)}</b></td><td>${esc(s.group)}</td><td>${s.level.icon} Lv.${s.level.index}</td><td>${s.points}</td>
+        <td class="${s.week === 0 ? 'idle' : ''}">${s.week}</td><td>${s.total}</td><td>${esc(shortDate(s.lastPractice))}</td>
+        <td style="white-space:nowrap"><button class="btn small" data-act="stuMenu" data-id="${esc(s.id)}">管理</button></td></tr>`).join('')
+        : '<tr><td colspan="8" class="mini">沒有符合的學生</td></tr>'}
+    </table></div>`;
+}
+
+function shiftDate(s, n){ const p = s.split('-').map(Number); return new Date(Date.UTC(p[0], p[1] - 1, p[2] + n)).toISOString().slice(0, 10); }
+
+function taskForm(){
+  const e = A.edit;
+  if (!e) return `<button class="btn green" data-act="newTask">＋ 新增任務</button> <button class="btn blue" data-act="copyLast">複製上週任務到本週</button>`;
+  return `<div class="card"><h2 style="margin-top:0">${e.id ? '編輯任務' : '新增任務'}</h2>
+    <label>任務名稱</label><input id="tTitle" value="${esc(e.title)}" placeholder="例如：小星星 第一關">
+    <label>說明（選填）</label><input id="tNote" value="${esc(e.note)}" placeholder="例如：先用指法慢慢確認">
+    <label>指派給（填「全部」或某個分部）</label><input id="tGroup" list="groupList" value="${esc(e.group)}" placeholder="全部">
+    <div class="row2"><div><label>需過關幾次</label><input id="tTarget" type="number" min="1" max="50" value="${esc(e.target)}"></div><div><label>完成得幾分</label><input id="tPoints" type="number" min="0" max="100" value="${esc(e.points)}"></div></div>
+    <div class="row2"><div><label>開始日</label><input id="tStart" type="date" value="${esc(e.startDate)}"></div><div><label>結束日</label><input id="tEnd" type="date" value="${esc(e.endDate)}"></div></div>
+    <label>收音音符（留空＝自由吹奏）</label>
+    <input id="tNotes" value="${esc(e.notes)}" placeholder="例如：1 1 5 5 6 6 5:2">
+    <div class="chips" style="margin-top:6px">
+      <button class="chip" data-act="preset" data-v="1 3 5 1'">Do Mi Sol 高Do</button>
+      <button class="chip" data-act="preset" data-v="1 2 3 4 5 6 7 1'">音階</button>
+      <button class="chip" data-act="preset" data-v="">清空（自由吹奏）</button>
+    </div>
+    <p class="mini">寫法：簡譜數字 1～7；高音加單引號（1' 2'）；休止寫 0；拍數寫在冒號後（5:2＝吹 2 拍，沒寫＝1 拍）。</p>
+    <label>原速 BPM（填了＝跟著節拍吹，並開放三個速度階段；留空＝不跟拍）</label>
+    <input id="tBpm" type="number" min="30" max="200" value="${esc(e.bpm || '')}" placeholder="例如：72">
+    ${A.err ? '<div class="err">' + esc(A.err) + '</div>' : ''}
+    <div class="row2" style="margin-top:14px"><button class="btn" data-act="cancelTask">取消</button><button class="btn green" data-act="saveTask">儲存</button></div></div>`;
+}
+
+function adminTasks(){
+  const D = A.data;
+  return taskForm() + `<h2>任務列表</h2>` + (D.tasks.length ? D.tasks.map(t => {
+    const cur = t.startDate <= D.today && t.endDate >= D.today;
+    const open = A.open === t.id;
+    const elig = D.students.filter(s => t.group === '全部' || t.group === s.group);
+    const mode = !t.notes ? '自由吹奏' : t.bpm ? '跟拍 ' + t.bpm + ' BPM' : '依序吹準';
+    return `<div class="card">
+      <div class="top"><div><b style="font-size:1.1rem">${esc(t.title)}</b> ${cur ? '<span class="badge" style="font-size:.8rem;padding:1px 10px">進行中</span>' : ''}
+      <div class="mini">${esc(t.group === '全部' ? '全部分部' : t.group)}　·　${esc(shortDate(t.startDate))}～${esc(shortDate(t.endDate))}　·　過關 ${t.target} 次　·　${t.points} 分</div>
+      <div class="mini">🎤 ${esc(mode)}${t.notes ? '　·　' + esc(t.notes) : ''}</div>
+      ${t.note ? `<div class="mini">${esc(t.note)}</div>` : ''}</div>
+      <div style="text-align:right"><b style="font-size:1.4rem">${t.done}/${t.eligible}</b><div class="mini">完成人數</div></div></div>
+      <div style="margin-top:8px"><button class="btn small" data-act="toggleTask" data-id="${esc(t.id)}">${open ? '收起進度' : '看每人進度'}</button>
+      <button class="btn small blue" data-act="editTask" data-id="${esc(t.id)}">編輯</button>
+      <button class="btn small red" data-act="delTask" data-id="${esc(t.id)}">刪除</button></div>
+      ${open ? `<div class="scroll" style="margin-top:8px"><table class="tbl"><tr><th>姓名</th><th>分部</th><th>進度</th>${t.bpm ? '<th>最快通過速度</th>' : ''}</tr>${
+        elig.slice().sort((a, b) => (t.progress[b.id] || 0) - (t.progress[a.id] || 0)).map(s => { const c = Math.max(0, t.progress[s.id] || 0);
+          return `<tr><td>${esc(s.name)}</td><td>${esc(s.group)}</td><td class="${c === 0 ? 'idle' : ''}">${Math.min(c, t.target)} / ${t.target} ${c >= t.target ? '✅' : ''}</td>${t.bpm ? '<td>' + (t.best[s.id] ? t.best[s.id] + '%' : '—') + '</td>' : ''}</tr>`; }).join('') || '<tr><td colspan="4" class="mini">沒有符合的學生</td></tr>'}</table></div>` : ''}
+    </div>`; }).join('') : '<div class="card">還沒有任務，按上面「新增任務」開始派本週作業。</div>');
+}
+
+const PRESETS = {
+  loose:  { tol: 90, holdMs: 400, missPct: 40, timingBeats: 1, coverage: 30, freeSec: 4 },
+  strict: { tol: 50, holdMs: 1000, missPct: 0, timingBeats: 0.3, coverage: 70, freeSec: 12 }
+};
+const HELP = {
+  tol: '吹的音和標準音差多少音分以內算對。50＝標準，75＝放寬，90＝很寬（再大會和隔壁音搞混）',
+  holdMs: '依序吹準模式：每個音要穩定吹多久才算。越小越容易',
+  missPct: '一首裡可以漏掉幾 % 的音還算過關。0＝全部都要吹到',
+  timingBeats: '跟拍模式：音可以比節拍早或晚幾拍。越大越寬',
+  coverage: '跟拍模式：每個音要吹到它長度的幾 % 才算。越小越寬',
+  freeSec: '自由吹奏：要累積吹出穩定聲音幾秒',
+  speed1: '三個速度階段（原速的幾 %），學生可選擇；預設 100／90／80',
+  speed2: '', speed3: '', clickOn: '跟拍時是否播放節拍聲（建議戴耳機）'
+};
+function adminSettings(){
+  const D = A.data, s = D.settings, R = D.ranges, L = D.labels;
+  const num = k => `<div><label>${esc(L[k])}</label><input id="s_${k}" type="number" step="any" min="${R[k][0]}" max="${R[k][1]}" value="${esc(s[k])}"></div>`;
+  return `<div class="card"><h2 style="margin-top:0">收音判定寬鬆度</h2>
+    <p class="mini">全班（所有任務）共用。改完按「儲存」，學生下次打開頁面就會套用。</p>
+    <div class="chips"><button class="chip" data-act="setPreset" data-v="loose">最寬鬆</button><button class="chip" data-act="setPreset" data-v="normal">預設（放寬）</button><button class="chip" data-act="setPreset" data-v="strict">較嚴格</button></div>
+    <div class="row2">${num('tol')}${num('holdMs')}</div><p class="mini">${esc(HELP.tol)}<br>${esc(HELP.holdMs)}</p>
+    <div class="row2">${num('missPct')}${num('freeSec')}</div><p class="mini">${esc(HELP.missPct)}<br>${esc(HELP.freeSec)}</p>
+    <div class="row2">${num('timingBeats')}${num('coverage')}</div><p class="mini">${esc(HELP.timingBeats)}<br>${esc(HELP.coverage)}</p>
+    <h2>樂曲速度三個階段</h2>
+    <div class="row3">${num('speed1')}${num('speed2')}${num('speed3')}</div><p class="mini">${esc(HELP.speed1)}</p>
+    <label>${esc(L.clickOn)}</label><select id="s_clickOn"><option value="1" ${s.clickOn ? 'selected' : ''}>開</option><option value="0" ${!s.clickOn ? 'selected' : ''}>關</option></select>
+    ${A.setErr ? '<div class="err">' + esc(A.setErr) + '</div>' : ''}
+    <div style="margin-top:14px"><button class="btn green big" data-act="saveSettings">儲存設定</button></div></div>`;
+}
+
+async function adminLogsView(b){
+  b.innerHTML = '<div class="card">讀取中…</div>';
+  try {
+    if (!A.logs) A.logs = (await api('adminLogs', { token: A.token })).logs;
+    b.innerHTML = `<div class="card scroll" style="padding:8px"><table class="tbl"><tr><th>時間</th><th>學生</th><th>任務</th><th></th></tr>${
+      A.logs.map(l => `<tr><td>${esc(l.time.slice(5, 16))}</td><td>${esc(l.student)}</td><td>${esc(l.task)}</td><td>${l.delta > 0 ? '過關' + (l.pct !== 100 ? '（' + l.pct + '%）' : '') : '<span class="idle">退回</span>'}</td></tr>`).join('') || '<tr><td colspan="4" class="mini">還沒有紀錄</td></tr>'}</table></div><p class="mini">顯示最近 200 筆；完整紀錄在 Firebase 控制台的 Firestore（logs）。</p>`;
+  } catch(e){ b.innerHTML = '<div class="err">' + esc(e.message) + '</div>'; }
+}
+
+function stuMenu(id){
+  const s = A.data.students.find(x => x.id === id); if (!s) return;
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div class="card"><h2 style="margin-top:0">${esc(s.name)}（${esc(s.group)}）</h2>
+    <p class="mini">積分 ${s.points}　·　累計 ${s.total} 次${s.claimed ? '' : '　·　⏳ 等學生重新設定密碼'}</p>
+    <div style="display:grid;gap:10px"><button class="btn blue" id="b1">重設密碼</button><button class="btn" id="b2">加減積分</button><button class="btn red" id="b3">刪除這位學生</button><button class="link" id="b4">關閉</button></div></div>`;
+  document.body.appendChild(m);
+  m.querySelector('#b4').onclick = () => m.remove();
+  m.querySelector('#b1').onclick = () => { m.remove(); modal('重設「' + s.name + '」的密碼', '<p>按下去之後，舊密碼立刻失效。請學生在登入頁選「第一次來」，用<b>同樣的姓名和分部</b>設定一個新密碼，之前的積分和進度都會保留。</p>', '確定重設', async () => { await api('resetPassword', { id: s.id }); await loadAdmin(); toast('已重設，請告訴學生重新設定密碼', 2800); }); };
+  m.querySelector('#b2').onclick = () => { m.remove(); modal('加減積分', '<label>加減多少分（扣分請填負數）</label><input id="mv" type="number"><label>原因（選填）</label><input id="mr" type="text">', '確定', async mm => { await api('adjustPoints', { token: A.token, id: s.id, delta: mm.querySelector('#mv').value, reason: mm.querySelector('#mr').value }); await loadAdmin(); }); };
+  m.querySelector('#b3').onclick = () => { m.remove(); modal('刪除學生', '<p>確定要刪除 <b>' + esc(s.name) + '</b> 嗎？他的練習紀錄和加減分也會一起刪除，無法復原。</p>', '確定刪除', async () => { await api('deleteStudent', { token: A.token, id: s.id }); await loadAdmin(); }); };
+}
+
+function readTaskForm(){
+  const v = id => document.getElementById(id).value;
+  return { id: A.edit.id, title: v('tTitle'), note: v('tNote'), group: v('tGroup'), target: v('tTarget'), points: v('tPoints'),
+           startDate: v('tStart'), endDate: v('tEnd'), notes: v('tNotes'), bpm: v('tBpm') };
+}
+
+async function copyLast(){
+  const D = A.data, ps = shiftDate(D.weekStart, -7), pe = shiftDate(D.weekStart, -1);
+  const src = D.tasks.filter(t => t.startDate >= ps && t.startDate <= pe);
+  if (!src.length) return toast('上週沒有任務可複製', 2000);
+  modal('複製上週任務', '<p>要把上週的 ' + src.length + ' 個任務複製到本週（' + shortDate(D.weekStart) + '～' + shortDate(D.weekEnd) + '）嗎？複製後可以再個別編輯。</p>', '複製', async () => {
+    for (const t of src){
+      await api('saveTask', { token: A.token, task: { title: t.title, note: t.note, group: t.group, target: t.target, points: t.points, startDate: D.weekStart, endDate: D.weekEnd, notes: t.notes, bpm: t.bpm } });
+    }
+    await loadAdmin();
+  });
+}
+
+
+/* ====================== 事件 ====================== */
+document.addEventListener('click', async ev => {
+  const el = ev.target.closest('[data-act]'); if (!el) return;
+  const act = el.dataset.act, id = el.dataset.id, v = el.dataset.v;
+  switch (act){
+    case 'adminLogin': {
+      A.err = '';
+      try { await AD.signIn(document.getElementById('aEm').value, document.getElementById('aPw').value); await loadAdmin(); }
+      catch(e){ A.err = e.message; viewAdminLogin(); }
+      return; }
+    case 'adminLogout': try { await AD.signOut(); } catch(e){} A.data = null; A.err = ''; return viewAdminLogin();
+    case 'reloadAdmin': A.logs = null; return loadAdmin();
+    case 'tab': A.tab = v; A.err = ''; A.setErr = ''; if (v === 'logs') A.logs = null; return viewAdmin();
+    case 'filterGroup': A.group = v; return viewAdmin();
+    case 'toggleIdle': A.idleOnly = !A.idleOnly; return viewAdmin();
+    case 'renameGroup':
+      return modal('合併／改分部名稱', '<p class="mini">學生自己填分部，難免有人打成不一樣（例如「鳳山」和「鳳山分校」）。把舊名稱的學生和任務全部改成新名稱。學生用新的或舊的分部名稱都可以登入。</p><label>原本的分部</label><input id="rf" list="groupList"><label>改成</label><input id="rt" list="groupList">', '改名',
+        async mm => { const r = await api('renameGroup', { token: A.token, from: mm.querySelector('#rf').value, to: mm.querySelector('#rt').value }); A.group = ''; await loadAdmin(); toast('已更新 ' + r.moved + ' 位學生', 2200); });
+    case 'stuMenu': return stuMenu(id);
+    case 'newTask': { const ws = A.data.weekStart; A.err = ''; A.edit = { id: '', title: '', note: '', group: '全部', target: 5, points: 10, startDate: ws, endDate: shiftDate(ws, 6), notes: '', bpm: '' }; return viewAdmin(); }
+    case 'cancelTask': A.edit = null; A.err = ''; return viewAdmin();
+    case 'editTask': { const t = A.data.tasks.find(x => x.id === id); A.err = ''; A.edit = Object.assign({}, t); return viewAdmin(); }
+    case 'preset': { document.getElementById('tNotes').value = v; return; }
+    case 'saveTask':
+      try { await api('saveTask', { token: A.token, task: readTaskForm() }); A.edit = null; A.err = ''; await loadAdmin(); }
+      catch(e){ A.err = e.message; const f = readTaskForm(); A.edit = f; viewAdmin(); }
+      return;
+    case 'toggleTask': A.open = A.open === id ? null : id; return viewAdmin();
+    case 'delTask': { const t = A.data.tasks.find(x => x.id === id);
+      return modal('刪除任務', '<p>確定刪除「' + esc(t.title) + '」嗎？注意：學生在這個任務得到的積分也會一起消失（練習紀錄不會刪）。</p>', '確定刪除', async () => { await api('deleteTask', { token: A.token, id: id }); await loadAdmin(); }); }
+    case 'copyLast': return copyLast();
+    case 'setPreset': {
+      const p = v === 'normal' ? A.data.defaults : PRESETS[v];
+      Object.keys(p).forEach(k => { if (/^(tol|holdMs|missPct|timingBeats|coverage|freeSec)$/.test(k)) { const e = document.getElementById('s_' + k); if (e) e.value = p[k]; } });
+      return; }
+    case 'saveSettings': {
+      const out = {};
+      Object.keys(A.data.ranges).forEach(k => { const e = document.getElementById('s_' + k); if (e) out[k] = e.value; });
+      try { const j = await api('saveSettings', { token: A.token, settings: out }); A.data.settings = j.settings; A.setErr = ''; toast('已儲存 ✅', 1500); viewAdmin(); }
+      catch(e){ A.setErr = e.message; viewAdmin(); }
+      return; }
+  }
+});
+
+async function start(){
+  try { SVC = await OPStudent.connect('admin'); AD = OPAdmin.make(SVC); }
+  catch(e){ A.cfgErr = e.code === 'config' ? (e.message || '還沒有設定 Firebase') : '連不上 Firebase，請檢查網路'; return viewAdminLogin(); }
+  let u = null;
+  try { u = await AD.current(); } catch(e){}
+  if (u) return loadAdmin();
+  viewAdminLogin();
+}
+start();
+</script>
+</body>
+</html>
