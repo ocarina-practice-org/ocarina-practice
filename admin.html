@@ -80,6 +80,7 @@ label{display:block;font-weight:700;margin:12px 0 4px}
 <div id="app"></div>
 <datalist id="groupList"></datalist>
 <script src="core.js"></script>
+<script src="songs.js"></script>
 <script src="firebase-config.js"></script>
 <script src="student-auth.js"></script>
 <script src="admin-data.js"></script>
@@ -214,6 +215,9 @@ function taskForm(){
     <label>指派給（填「全部」或某個分部）</label><input id="tGroup" list="groupList" value="${esc(e.group)}" placeholder="全部">
     <div class="row2"><div><label>需過關幾次</label><input id="tTarget" type="number" min="1" max="50" value="${esc(e.target)}"></div><div><label>完成得幾分</label><input id="tPoints" type="number" min="0" max="100" value="${esc(e.points)}"></div></div>
     <div class="row2"><div><label>開始日</label><input id="tStart" type="date" value="${esc(e.startDate)}"></div><div><label>結束日</label><input id="tEnd" type="date" value="${esc(e.endDate)}"></div></div>
+    <label>歌曲（選填：選歌曲並填小節範圍，按下方按鈕自動產生音符）</label>
+    <div class="row2"><div><select id="tSong">${Object.keys(window.OP_SONGS || {}).map(k => '<option value="' + k + '">' + esc(window.OP_SONGS[k].title) + '</option>').join('')}</select></div><div><input id="tFrom" type="number" min="1" placeholder="從第幾小節"></div></div>
+    <div class="row2" style="margin-top:6px"><div><input id="tTo" type="number" min="1" placeholder="到第幾小節（可不填）"></div><div><button class="chip" data-act="fillSong">依歌曲產生音符</button></div></div>
     <label>收音音符（留空＝自由吹奏）</label>
     <input id="tNotes" value="${esc(e.notes)}" placeholder="例如：1 1 5 5 6 6 5:2">
     <div class="chips" style="margin-top:6px">
@@ -344,6 +348,15 @@ document.addEventListener('click', async ev => {
     case 'cancelTask': A.edit = null; A.err = ''; return viewAdmin();
     case 'editTask': { const t = A.data.tasks.find(x => x.id === id); A.err = ''; A.edit = Object.assign({}, t); return viewAdmin(); }
     case 'preset': { document.getElementById('tNotes').value = v; return; }
+    case 'fillSong': {
+      const key = document.getElementById('tSong').value, song = (window.OP_SONGS || {})[key];
+      const from = parseInt(document.getElementById('tFrom').value, 10), to = parseInt(document.getElementById('tTo').value, 10) || from;
+      if (!song) { A.err = '請先選歌曲'; return viewAdmin(); }
+      if (!(from >= 1 && to >= from && to <= song.bars.length)) { A.err = '小節範圍請填 1～' + song.bars.length + '，且「到」不小於「從」'; return viewAdmin(); }
+      const text = song.bars.slice(from - 1, to).join(' ').replace(/\bb7(?=[:\s]|$)/g, '7b');
+      const f = readTaskForm(); f.notes = text; f.title = f.title || (song.title + ' 第' + from + '–' + to + '小節');
+      A.edit = f; A.err = ''; return viewAdmin();
+    }
     case 'saveTask':
       try { await api('saveTask', { token: A.token, task: readTaskForm() }); A.edit = null; A.err = ''; await loadAdmin(); }
       catch(e){ A.err = e.message; const f = readTaskForm(); A.edit = f; viewAdmin(); }
