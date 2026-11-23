@@ -169,7 +169,7 @@ function viewAdmin(){
     <div class="top"><h1>🧑‍🏫 老師後台</h1><div><button class="btn small" data-act="reloadAdmin">重新整理</button> <button class="btn small" data-act="adminLogout">登出</button></div></div>
     <p class="sub">今天 ${esc(D.today)}　·　本週 ${esc(shortDate(D.weekStart))} ～ ${esc(shortDate(D.weekEnd))}</p>
     <div class="tabs">
-      ${[['students','👦 學生總覽'],['tasks','📋 每週任務'],['settings','⚙️ 放寬設定'],['logs','🕒 練習紀錄']].map(t => `<button class="chip ${A.tab === t[0] ? 'on' : ''}" data-act="tab" data-v="${t[0]}">${t[1]}</button>`).join('')}
+      ${[['students','👦 學生總覽'],['tasks','📋 每週任務'],['logs','🕒 練習紀錄']].map(t => `<button class="chip ${A.tab === t[0] ? 'on' : ''}" data-act="tab" data-v="${t[0]}">${t[1]}</button>`).join('')}
     </div>
     <div id="adminBody"></div>`;
   const b = document.getElementById('adminBody');
@@ -206,28 +206,33 @@ function adminStudents(){
 
 function shiftDate(s, n){ const p = s.split('-').map(Number); return new Date(Date.UTC(p[0], p[1] - 1, p[2] + n)).toISOString().slice(0, 10); }
 
+/* 依歌曲與小節範圍產生收音音符（學生練習用），並回傳預設標題 */
+function songNotes(key, from, to){
+  const song = ((window.OLM_SONGS || {}).SONGS || {})[key];
+  if (!song) throw new Error('請先選歌曲');
+  if (!(from >= 1 && to >= from && to <= song.bars.length)) throw new Error('小節範圍請填 1～' + song.bars.length + '，且「到」不小於「從」');
+  const notes = song.bars.slice(from - 1, to).join(' ').split(/\s+/).filter(Boolean).map(tk => {
+    const p = tk.replace(/~/g, '').split(':');
+    if (p[0].indexOf('#') >= 0) throw new Error('這段有升記號（#），目前不支援，請換一段小節');
+    const s = p[0] === 'b7' ? '7b' : p[0];
+    return p.length > 1 ? s + ':' + p[1] : s;
+  }).join(' ');
+  return { notes: notes, title: song.title + ' 第' + from + '–' + to + '小節' };
+}
+
 function taskForm(){
   const e = A.edit;
   if (!e) return `<button class="btn green" data-act="newTask">＋ 新增任務</button> <button class="btn blue" data-act="copyLast">複製上週任務到本週</button>`;
+  const SONGS = (window.OLM_SONGS || {}).SONGS || {};
   return `<div class="card"><h2 style="margin-top:0">${e.id ? '編輯任務' : '新增任務'}</h2>
-    <label>任務名稱</label><input id="tTitle" value="${esc(e.title)}" placeholder="例如：小星星 第一關">
-    <label>說明（選填）</label><input id="tNote" value="${esc(e.note)}" placeholder="例如：先用指法慢慢確認">
+    <label>歌曲</label>
+    <select id="tSong">${Object.keys(SONGS).map(k => '<option value="' + k + '"' + (e.song === k ? ' selected' : '') + '>' + esc(SONGS[k].title) + '</option>').join('')}</select>
+    <div class="row2"><div><label>從第幾小節</label><input id="tFrom" type="number" min="1" value="${esc(e.from || '')}"></div><div><label>到第幾小節</label><input id="tTo" type="number" min="1" value="${esc(e.to || '')}"></div></div>
+    <label>任務名稱（留空＝自動用歌曲名稱）</label><input id="tTitle" value="${esc(e.title)}">
     <label>指派給（填「全部」或某個分部）</label><input id="tGroup" list="groupList" value="${esc(e.group)}" placeholder="全部">
     <div class="row2"><div><label>需過關幾次</label><input id="tTarget" type="number" min="1" max="50" value="${esc(e.target)}"></div><div><label>完成得幾分</label><input id="tPoints" type="number" min="0" max="100" value="${esc(e.points)}"></div></div>
     <div class="row2"><div><label>開始日</label><input id="tStart" type="date" value="${esc(e.startDate)}"></div><div><label>結束日</label><input id="tEnd" type="date" value="${esc(e.endDate)}"></div></div>
-    <label>歌曲（選填：選歌曲並填小節範圍，按下方按鈕自動產生音符）</label>
-    <div class="row2"><div><select id="tSong">${Object.keys((window.OLM_SONGS || {}).SONGS || {}).map(k => '<option value="' + k + '"' + (e.song === k ? ' selected' : '') + '>' + esc(window.OLM_SONGS.SONGS[k].title) + '</option>').join('')}</select></div><div><input id="tFrom" type="number" min="1" placeholder="從第幾小節"></div></div>
-    <div class="row2" style="margin-top:6px"><div><input id="tTo" type="number" min="1" placeholder="到第幾小節（可不填）"></div><div><button class="chip" data-act="fillSong">依歌曲產生音符</button></div></div>
-    <label>收音音符（留空＝自由吹奏）</label>
-    <input id="tNotes" value="${esc(e.notes)}" placeholder="例如：1 1 5 5 6 6 5:2">
-    <div class="chips" style="margin-top:6px">
-      <button class="chip" data-act="preset" data-v="1 3 5 1'">Do Mi Sol 高Do</button>
-      <button class="chip" data-act="preset" data-v="1 2 3 4 5 6 7 1'">音階</button>
-      <button class="chip" data-act="preset" data-v="">清空（自由吹奏）</button>
-    </div>
-    <p class="mini">寫法：簡譜數字 1～7；高音加單引號（1'～7'）；降 Si 寫 7b；休止寫 0；拍數寫在冒號後（5:2＝吹 2 拍，沒寫＝1 拍，可寫 0.25 等小數）。</p>
-    <label>原速 BPM（填了＝跟著節拍吹，並開放三個速度階段；留空＝不跟拍）</label>
-    <input id="tBpm" type="number" min="30" max="200" value="${esc(e.bpm || '')}" placeholder="例如：72">
+    <input type="hidden" id="tNote" value=""><input type="hidden" id="tNotes" value="${esc(e.notes || '')}"><input type="hidden" id="tBpm" value="">
     ${A.err ? '<div class="err">' + esc(A.err) + '</div>' : ''}
     <div class="row2" style="margin-top:14px"><button class="btn" data-act="cancelTask">取消</button><button class="btn green" data-act="saveTask">儲存</button></div></div>`;
 }
@@ -238,12 +243,12 @@ function adminTasks(){
     const cur = t.startDate <= D.today && t.endDate >= D.today;
     const open = A.open === t.id;
     const elig = D.students.filter(s => t.group === '全部' || t.group === s.group);
-    const mode = !t.notes ? '自由吹奏' : t.bpm ? '跟拍 ' + t.bpm + ' BPM' : '依序吹準';
+    const SONGS = (window.OLM_SONGS || {}).SONGS || {};
+    const songLabel = t.song && SONGS[t.song] ? SONGS[t.song].title + '　第 ' + t.from + '–' + t.to + ' 小節' : '（沒有樂譜）';
     return `<div class="card">
       <div class="top"><div><b style="font-size:1.1rem">${esc(t.title)}</b> ${cur ? '<span class="badge" style="font-size:.8rem;padding:1px 10px">進行中</span>' : ''}
       <div class="mini">${esc(t.group === '全部' ? '全部分部' : t.group)}　·　${esc(shortDate(t.startDate))}～${esc(shortDate(t.endDate))}　·　過關 ${t.target} 次　·　${t.points} 分</div>
-      <div class="mini">🎤 ${esc(mode)}${t.notes ? '　·　' + esc(t.notes) : ''}</div>
-      ${t.note ? `<div class="mini">${esc(t.note)}</div>` : ''}</div>
+      <div class="mini">🎼 ${esc(songLabel)}</div></div>
       <div style="text-align:right"><b style="font-size:1.4rem">${t.done}/${t.eligible}</b><div class="mini">完成人數</div></div></div>
       <div style="margin-top:8px"><button class="btn small" data-act="toggleTask" data-id="${esc(t.id)}">${open ? '收起進度' : '看每人進度'}</button>
       <button class="btn small blue" data-act="editTask" data-id="${esc(t.id)}">編輯</button>
@@ -367,10 +372,16 @@ document.addEventListener('click', async ev => {
       f.title = f.title || (song.title + ' 第' + from + '–' + to + '小節');
       A.edit = f; A.err = ''; return viewAdmin();
     }
-    case 'saveTask':
-      try { await api('saveTask', { token: A.token, task: readTaskForm() }); A.edit = null; A.err = ''; await loadAdmin(); }
-      catch(e){ A.err = e.message; const f = readTaskForm(); A.edit = f; viewAdmin(); }
+    case 'saveTask': {
+      const f = readTaskForm();
+      try {
+        const key = document.getElementById('tSong').value, from = parseInt(f.from, 10), to = parseInt(f.to, 10) || from;
+        const r = songNotes(key, from, to);
+        f.song = key; f.from = from; f.to = to; f.notes = r.notes; f.bpm = ''; f.note = ''; f.title = f.title || r.title;
+        await api('saveTask', { token: A.token, task: f }); A.edit = null; A.err = ''; await loadAdmin();
+      } catch (e) { A.err = e.message; A.edit = f; viewAdmin(); }
       return;
+    }
     case 'toggleTask': A.open = A.open === id ? null : id; return viewAdmin();
     case 'delTask': { const t = A.data.tasks.find(x => x.id === id);
       return modal('刪除任務', '<p>確定刪除「' + esc(t.title) + '」嗎？注意：學生在這個任務得到的積分也會一起消失（練習紀錄不會刪）。</p>', '確定刪除', async () => { await api('deleteTask', { token: A.token, id: id }); await loadAdmin(); }); }
