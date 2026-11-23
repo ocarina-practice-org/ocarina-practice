@@ -23,8 +23,10 @@ h2{font-size:17px;margin:0 0 8px}
 .btn:disabled{opacity:.5}
 .btnrow{display:flex;gap:8px}
 .btnrow .btn{width:auto}
-#goBtn{flex:1.5}
-#demoBtn{flex:1;font-size:17px;background:var(--vellum-2)}
+#goBtn,#demoBtn,#back{flex:1;font-size:17px;font-weight:800;color:var(--ink);padding:12px 4px;white-space:nowrap}
+#goBtn{background:var(--gold-hi)}
+#demoBtn,#back{background:var(--vellum-2)}
+#back{flex:.8}
 #demoBtn.on{background:var(--gold-hi)}
 .hint{font-size:13px;color:var(--ink-2);margin:6px 0 0}
 .task{font-size:18px;font-weight:800}
@@ -65,6 +67,11 @@ ul.errs li b{font-weight:800}
 .pager button:disabled{opacity:.35}
 body.focus .pager button{visibility:hidden}
 body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #mockNote,body.focus #inapp,body.focus #ctlCard .row,body.focus #ctlCard .hint,body.focus #goBtn{display:none}
+.seg{display:flex;flex:1;gap:6px}
+.seg button{flex:1;font:inherit;font-size:15px;font-weight:800;padding:8px 0;border:2px solid var(--ink-2);border-radius:12px;background:var(--vellum-2);color:var(--ink);cursor:pointer}
+.seg button.on{background:var(--gold-hi);border-color:var(--ink)}
+.seg button:disabled{opacity:.5}
+#bpm{display:none}
 @media (orientation:portrait){
   /* 直向：一句 2 小節，標題、說明收掉，樂譜＋開始吹奏＋聽示範＋速度擠在同一屏 */
   body{padding:6px 10px calc(8px + env(safe-area-inset-bottom))}
@@ -75,31 +82,27 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
   #taskCard .task{font-size:15px}
   #scoreTitle{font-size:14px;margin:0 0 2px}
   .pager{margin:0 0 2px}
-  #ctlCard .btn{padding:10px;font-size:18px}
+  #ctlCard .btnrow{gap:6px}
   #ctlCard .row{margin-top:8px}
 }
 @media (orientation:landscape) and (min-width:560px){
-  /* 橫向：左邊大樂譜；右邊一欄集中「返回、開始吹奏、聽示範、速度」，整頁不捲動 */
-  body{padding:4px 8px calc(4px + env(safe-area-inset-bottom))}
-  .wrap{max-width:1100px;display:grid;grid-template-columns:minmax(0,1fr) 118px;grid-template-rows:auto 1fr;column-gap:6px;align-items:start}
+  /* 橫向：樂譜佔滿上方，下面一排「返回／開始吹奏／聽示範」＋速度，整頁不捲動 */
+  body{padding:4px 10px calc(4px + env(safe-area-inset-bottom))}
+  .wrap{max-width:1100px}
   h1,#protoNote,#mockNote,#taskCard,#scoreTitle,#inapp,#ctlCard .hint,#rowSong,#rowPreset,#rowRange,#ctlCard .row:has(#tol){display:none}
-  #scoreCard{grid-column:1;grid-row:1/3;margin:0;padding:4px 6px;border-radius:12px}
-  .back{grid-column:2;grid-row:1;text-align:center;font-size:14px;padding:6px 0;border:2px solid var(--ink-2);border-radius:12px;background:var(--vellum-2);width:100%;margin:0 0 6px}
-  #ctlCard{grid-column:2;grid-row:2;margin:0;padding:6px;border-radius:12px}
-  #resCard{grid-column:1/3;grid-row:3}
-  .card{box-shadow:1px 2px 0 var(--shadow)}
-  .pager{margin:0 0 2px;gap:8px;font-size:12px}
+  .card{margin:0 0 6px;padding:5px 8px;border-radius:12px;box-shadow:1px 2px 0 var(--shadow)}
+  #scoreCard{padding:4px 8px}
+  .pager{margin:0 0 1px;gap:8px;font-size:12px}
   .pager button{font-size:12px;padding:0 10px}
-  svg.score{max-height:calc(100vh - 56px)}
-  #ctlCard .btnrow{flex-direction:column;gap:6px}
-  #ctlCard .btn{font-size:15px;padding:8px 4px;min-height:46px}
-  #ctlCard .row .seg button{font-size:11px;padding:6px 0;min-width:0;border-radius:10px}
-  #ctlCard .row .seg{gap:3px;width:100%}
-  #ctlCard{padding:6px 5px}
+  svg.score{max-height:calc(100vh - 112px)}
+  #ctlCard{display:flex;gap:8px;align-items:center}
+  #ctlCard .btnrow{flex:1;gap:6px}
+  #ctlCard .btn{font-size:15px;padding:8px 4px;min-height:44px}
+  #ctlCard .row{margin:0;flex:0 0 auto;gap:6px}
+  #ctlCard .row label{font-size:12px}
+  #ctlCard .row .seg{gap:4px;flex:none}
+  #ctlCard .row .seg button{font-size:12px;padding:6px 8px;min-width:48px}
   #stopBtn{margin-top:0!important;font-size:14px}
-  #ctlCard .row{margin-top:6px;flex-direction:column;align-items:stretch;gap:2px}
-  #ctlCard .row label{font-size:12px;text-align:center}
-  #ctlCard select{font-size:14px;padding:3px 4px}
   body.focus .pager{display:none}
   #liveBox{display:grid;grid-template-columns:80px 1fr;column-gap:8px;align-items:center}
   #liveBox .count{grid-column:1;grid-row:1/3;font-size:38px;min-height:0}
@@ -108,22 +111,15 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
   #liveBox .gtext{grid-column:2;grid-row:2;min-height:20px;font-size:15px}
   #liveBox .vol{grid-column:2;grid-row:3;margin-top:2px}
 }
-.seg{display:flex;flex:1;gap:6px}
-.seg button{flex:1;font:inherit;font-size:15px;font-weight:800;padding:8px 0;border:2px solid var(--ink-2);border-radius:12px;background:var(--vellum-2);color:var(--ink);cursor:pointer}
-.seg button.on{background:var(--gold-hi);border-color:var(--ink)}
-.seg button:disabled{opacity:.5}
-#bpm{display:none}
-#ctlCard .btnrow .btn{flex:1;min-height:52px;border-radius:14px}
 [hidden]{display:none!important}
 </style>
 <script src="save-core.js"></script>
 <script src="sfx.js"></script>
 <script src="song-shim.js"></script>
-<script>if(window.Sfx){Sfx.auto('.back','nav');Sfx.auto('.btn:not(#goBtn):not(#stopBtn):not(#demoBtn)','tap');}</script>
+<script>if(window.Sfx){Sfx.auto('.btn:not(#goBtn):not(#stopBtn):not(#demoBtn)','tap');}</script>
 </head>
 <body>
 <div class="wrap">
-  <button class="back" id="back">← 返回</button>
   <h1 id="pageTitle">分段練習（原型）</h1>
 
   <div class="card warn" id="inapp" hidden>⚠️ 看起來在 LINE／臉書／IG 的內建瀏覽器，常常擋麥克風。請點右上角「⋯」→ 用 Safari／Chrome 開啟。</div>
@@ -156,7 +152,7 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
   </section>
 
   <section class="card" id="ctlCard">
-    <div class="btnrow"><button class="btn" id="goBtn" data-nosfx>🎤 開始吹奏</button><button class="btn alt" id="demoBtn" data-nosfx>🔊 聽示範</button></div>
+    <div class="btnrow"><button class="btn alt back" id="back" data-nosfx>← 返回</button><button class="btn" id="goBtn" data-nosfx>🎤 開始吹奏</button><button class="btn alt" id="demoBtn" data-nosfx>🔊 聽示範</button></div>
     <button class="btn alt" id="stopBtn" data-nosfx hidden style="margin-top:8px">⏹ 中途停止（這次不算）</button>
     <div class="row" id="rowSong"><label for="song">曲子</label><select id="song"></select></div>
     <div class="row" id="rowPreset"><label for="preset">範圍</label><select id="preset"></select></div>
@@ -170,7 +166,7 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
       <div class="seg" id="bpmSeg" role="group" aria-label="速度"><button type="button" data-v="100">100%</button><button type="button" data-v="90">90%</button><button type="button" data-v="80">80%</button></div></div>
     <div class="row"><label for="tol">音準容許</label>
       <select id="tol"><option value="10">±10 音分</option><option value="15">±15 音分</option><option value="25" selected>±25 音分（鬆）</option><option value="40">±40 音分（很鬆）</option></select></div>
-    <p class="hint">「聽示範」會用目前選的小節與速度，先 4 拍預備拍再播一遍（合成音，不是真陶笛），樂譜游標會跟著走；示範時麥克風是關的。<br>按「開始吹奏」後先聽 4 拍預備拍，接著照譜吹；休止符就停下來。音準、節拍都對，才算一次「正確」。相同的音連著吹時，請用舌頭輕輕「tu」斷開。建議戴耳機，節拍聲才不會被麥克風收進去。一次最多練 16 小節。</p>
+    <p class="hint">「聽示範」會用目前選的小節與速度，先 4 拍預備拍再播一遍（合成音，不是真陶笛），樂譜游標會跟著走；示範時麥克風是關的。<br>按「開始吹奏」後先聽 4 拍預備拍，接著照譜吹；休止符就停下來。音準、節拍都對，才算一次「正確」。相同的音連著吹時，請用舌頭輕輕「tu」斷開。建議戴耳機，節拍聲才不會被麥克風收進去。一次最多練 20 小節。</p>
     <div class="err" id="errMsg" hidden></div>
   </section>
 
@@ -187,14 +183,14 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
   </section>
 </div>
 <script src="songs.js?v=9"></script>
-<script src="gloria-songs.js?v=1"></script>
+<script src="gloria-songs.js?v=2"></script>
 <script>
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
 const {SONGS,build}=window.OLM_SONGS;
 const SVGNS='http://www.w3.org/2000/svg';
-const COUNT_IN=4,MAX_BARS=16,STORE='olm_song_proto_v1';
+const COUNT_IN=4,MAX_BARS=20,STORE='olm_song_proto_v1';
 /* 任務模式：網址 ?task=任務id（由遊戲練習分頁的「本週任務」清單點進來）。曲子與小節範圍由任務指定、不可改；
    次數、星星糖、水晶碎片都走共用的 wk-core.js（olm_wk_v2）。沒有 ?task= 時是舊的原型模式（只存 olm_song_proto_v1，不計星星糖，供開發測試）。 */
 const Core=window.OLM_WK;

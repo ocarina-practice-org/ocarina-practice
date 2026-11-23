@@ -90,8 +90,8 @@ const M=[
 /*72*/"6:1 0:3"
 ];
 const up=M.map(m=>Array.isArray(m)?m[0]:m), down=M.map(m=>Array.isArray(m)?m[1]:m);
-/* 預設選曲範圍：每 8 小節一個樂句（練習追蹤用），另加全曲 */
-const PRE=[['m1–8（主題）',1,8],['m9–16（跑句）',9,16],['m17–24',17,24],['m25–32',25,32],['m33–40',33,40],['m41–48（長音）',41,48],['m49–56',49,56],['m57–64',57,64],['m65–72（結尾）',65,72],['m1–72（全曲）',1,72]];
+/* 預設選曲範圍：四大段（練習追蹤用） */
+const PRE=[['第1段　m1–15',1,15],['第2段　m16–35',16,35],['第3段　m36–55',36,55],['第4段　m56–72',56,72]];
 S.gloriaup={id:'gloriaup',title:'Gloria（上聲部）',ts:[4,4],bars:up,presets:PRE};
 S.gloriadown={id:'gloriadown',title:'Gloria（下聲部）',ts:[4,4],bars:down,presets:PRE};
 })(typeof window!=='undefined'?window:globalThis);
