@@ -236,13 +236,32 @@ function songNotes(key, from, to){
   return { notes: notes, title: song.title + ' 第' + from + '–' + to + '小節' };
 }
 
+/* 段落選單：用歌曲自帶的 presets（Gloria＝四大段） */
+function segOptions(key, from, to){
+  const sg = ((window.OLM_SONGS || {}).SONGS || {})[key], ps = (sg && sg.presets) || [];
+  const cur = ps.findIndex(p => p[1] === +from && p[2] === +to);
+  return '<option value="">自訂小節</option>' + ps.map((p, i) => '<option value="' + i + '"' + (i === cur ? ' selected' : '') + '>' + esc(p[0]) + '</option>').join('');
+}
+function segFill(){
+  const key = document.getElementById('tSong').value;
+  document.getElementById('tSeg').innerHTML = segOptions(key, document.getElementById('tFrom').value, document.getElementById('tTo').value);
+}
+function segPick(){
+  const key = document.getElementById('tSong').value, v = document.getElementById('tSeg').value;
+  const sg = ((window.OLM_SONGS || {}).SONGS || {})[key];
+  if (v === '' || !sg || !sg.presets[+v]) return;
+  document.getElementById('tFrom').value = sg.presets[+v][1];
+  document.getElementById('tTo').value = sg.presets[+v][2];
+}
 function taskForm(){
   const e = A.edit;
   if (!e) return `<button class="btn green" data-act="newTask">＋ 新增任務</button> <button class="btn blue" data-act="copyLast">複製上週任務到本週</button>`;
   const SONGS = (window.OLM_SONGS || {}).SONGS || {};
   return `<div class="card"><h2 style="margin-top:0">${e.id ? '編輯任務' : '新增任務'}</h2>
     <label>歌曲</label>
-    <select id="tSong">${Object.keys(SONGS).map(k => '<option value="' + k + '"' + (e.song === k ? ' selected' : '') + '>' + esc(SONGS[k].title) + '</option>').join('')}</select>
+    <select id="tSong" onchange="segFill()">${Object.keys(SONGS).map(k => '<option value="' + k + '"' + (e.song === k ? ' selected' : '') + '>' + esc(SONGS[k].title) + '</option>').join('')}</select>
+    <label>段落（選一段會自動填入小節，也可以自己改下面的數字）</label>
+    <select id="tSeg" onchange="segPick()">${segOptions(e.song || Object.keys(SONGS)[0], e.from, e.to)}</select>
     <div class="row2"><div><label>從第幾小節</label><input id="tFrom" type="number" min="1" value="${esc(e.from || '')}"></div><div><label>到第幾小節</label><input id="tTo" type="number" min="1" value="${esc(e.to || '')}"></div></div>
     <label>任務名稱（留空＝自動用歌曲名稱）</label><input id="tTitle" value="${esc(e.title)}">
     <label>指派給（填「全部」或某個分部）</label><input id="tGroup" list="groupList" value="${esc(e.group)}" placeholder="全部">
