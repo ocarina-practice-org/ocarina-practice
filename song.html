@@ -825,6 +825,9 @@ if(TASK){   /* 任務模式：曲子與範圍由任務指定，不給改；標�
   $('protoNote').hidden=true;$('mockNote').hidden=!TASK.mock;
   $('pageTitle').textContent='本週任務';
   $('bpm').value='100';   /* 速度預設原速 100%（原速＝任務指定的 BPM） */
+  /* 簡潔版：隱藏音準容許與長說明（音準容許用預設 ±25 音分） */
+  document.querySelector('label[for=tol]').parentElement.hidden=true;
+  document.querySelector('p.hint').hidden=true;
   document.title='陶笛回家練習｜本週任務：'+TASK.name;
 }
 

@@ -237,10 +237,6 @@ function viewStudent(){
   const cur = m.tasks.filter(t => t.status === 'current'), past = m.tasks.filter(t => t.status !== 'current');
   $app.innerHTML = `
     <div class="top"><div><h1>${esc(m.name)}</h1><div class="sub">${esc(m.group)}</div></div><button class="btn small" data-act="logout">登出</button></div>
-    <div class="card"><div class="lvl"><div class="ic">${L.icon}</div><div style="flex:1">
-      <div style="font-weight:900;font-size:1.3rem">Lv.${L.index} ${esc(L.name)}</div>
-      <div class="mini">累計 ${m.points} 分${L.nextMin ? `　·　再 ${L.nextMin - m.points} 分升「${esc(L.nextName)}」` : '　·　已是最高等級！'}</div>
-      <div class="bar"><i style="width:${pct}%"></i></div></div></div></div>
     <h2>📋 這週的練習任務</h2>
     ${cur.length ? cur.map(t => taskCard(t, m)).join('') : '<div class="card">這週老師還沒有派任務，先好好休息 ☺️</div>'}
     ${past.length ? `<button class="link" data-act="togglePast">${S.showPast ? '▼ 收起' : '▶ 看以前的任務'}（${past.length}）</button>${S.showPast ? past.map(t => taskCard(t, m)).join('') : ''}` : ''}`;
