@@ -85,7 +85,7 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
   #ctlCard .btnrow{gap:6px}
   #ctlCard .row{margin-top:8px}
 }
-@media (orientation:landscape) and (min-width:560px){
+@media (orientation:landscape) and (min-width:440px){
   /* 橫向：樂譜佔滿上方，下面一排「返回／開始吹奏／聽示範」＋速度，整頁不捲動 */
   body{padding:4px 10px calc(4px + env(safe-area-inset-bottom))}
   .wrap{max-width:1100px}
@@ -101,7 +101,9 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
   #ctlCard .row{margin:0;flex:0 0 auto;gap:6px}
   #ctlCard .row label{font-size:12px}
   #ctlCard .row .seg{gap:4px;flex:none}
-  #ctlCard .row .seg button{font-size:12px;padding:6px 8px;min-width:48px}
+  #ctlCard .row .seg button{font-size:12px;padding:6px 4px;min-width:0;flex:none;width:44px}
+  #ctlCard .row label{display:none}
+  #ctlCard .btnrow .btn{padding:8px 2px;font-size:14px}
   #stopBtn{margin-top:0!important;font-size:14px}
   body.focus .pager{display:none}
   #liveBox{display:grid;grid-template-columns:80px 1fr;column-gap:8px;align-items:center}
@@ -215,7 +217,7 @@ const ACC_PAD=1.0;   /* 有升降記號的音符，左邊多留的寬度（單�
 let W=340;let ROW_H=150;const CLEF_W=46,STEP=4,LINE_GAP=8;let AVAIL=W-CLEF_W-6;
 /* 動態分頁：一次只顯示一「句」（橫向直向都是 2 小節），吹到下一句自動翻頁，不用捲動 */
 let PAGES=[],curPage=0;
-function isLand(){return window.matchMedia('(orientation:landscape)').matches&&window.innerWidth>=560;}
+function isLand(){return window.matchMedia('(orientation:landscape)').matches&&window.innerWidth>=440;}
 function el(tag,attrs,parent,text){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e;}
 function stepOf(n){return (4+n.oct)*7+(n.deg-1)-(4*7+2);}   /* 相對 E4（下加一線）的音階級數；譜面低一個八度 */
 /* 簡譜時值記號：8 分下加一條線、16 分兩條；2 拍以上在右邊加「－」（每多一拍一條）；附點加「·」 */
@@ -878,6 +880,7 @@ notifyParent(true);
 function leave(){
   notifyParent(false);
   stopRun();stopDemo();closeMic();
+  if(window.parent&&window.parent!==window){try{window.parent.postMessage({src:'song-practice',type:'close'},'*');}catch(e){}return;}   /* 嵌在學生頁彈窗裡：請外層關閉 */
   if(history.length>1)history.back();else location.href='index.html';
 }
 function syncSeg(){const v=$('bpm').value;document.querySelectorAll('#bpmSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));}
