@@ -76,7 +76,7 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
   #scoreTitle{font-size:14px;margin:0 0 2px}
   .pager{margin:0 0 2px}
   #ctlCard .btn{padding:10px;font-size:18px}
-  #ctlCard .row{margin-top:6px}
+  #ctlCard .row{margin-top:8px}
 }
 @media (orientation:landscape) and (min-width:560px){
   /* 橫向：左邊大樂譜；右邊一欄集中「返回、開始吹奏、聽示範、速度」，整頁不捲動 */
@@ -92,8 +92,10 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
   .pager button{font-size:12px;padding:0 10px}
   svg.score{max-height:calc(100vh - 56px)}
   #ctlCard .btnrow{flex-direction:column;gap:6px}
-  #ctlCard .btn{font-size:15px;padding:10px 4px;border-radius:12px}
-  #goBtn,#demoBtn{flex:none}
+  #ctlCard .btn{font-size:15px;padding:8px 4px;min-height:46px}
+  #ctlCard .row .seg button{font-size:11px;padding:6px 0;min-width:0;border-radius:10px}
+  #ctlCard .row .seg{gap:3px;width:100%}
+  #ctlCard{padding:6px 5px}
   #stopBtn{margin-top:0!important;font-size:14px}
   #ctlCard .row{margin-top:6px;flex-direction:column;align-items:stretch;gap:2px}
   #ctlCard .row label{font-size:12px;text-align:center}
@@ -106,6 +108,12 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
   #liveBox .gtext{grid-column:2;grid-row:2;min-height:20px;font-size:15px}
   #liveBox .vol{grid-column:2;grid-row:3;margin-top:2px}
 }
+.seg{display:flex;flex:1;gap:6px}
+.seg button{flex:1;font:inherit;font-size:15px;font-weight:800;padding:8px 0;border:2px solid var(--ink-2);border-radius:12px;background:var(--vellum-2);color:var(--ink);cursor:pointer}
+.seg button.on{background:var(--gold-hi);border-color:var(--ink)}
+.seg button:disabled{opacity:.5}
+#bpm{display:none}
+#ctlCard .btnrow .btn{flex:1;min-height:52px;border-radius:14px}
 [hidden]{display:none!important}
 </style>
 <script src="save-core.js"></script>
@@ -158,7 +166,8 @@ body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #moc
       <input id="to" type="number" inputmode="numeric" min="1" style="width:70px;font:inherit;font-size:16px;padding:6px;border:2px solid var(--ink-2);border-radius:10px">
       <span id="rangeMax" style="font-size:12px;color:var(--ink-2)"></span></div>
     <div class="row"><label for="bpm">速度</label>
-      <select id="bpm"><option value="100" selected>原速 100%</option><option value="90">原速 90%</option><option value="80">原速 80%</option></select></div>
+      <select id="bpm"><option value="100" selected>原速 100%</option><option value="90">原速 90%</option><option value="80">原速 80%</option></select>
+      <div class="seg" id="bpmSeg" role="group" aria-label="速度"><button type="button" data-v="100">100%</button><button type="button" data-v="90">90%</button><button type="button" data-v="80">80%</button></div></div>
     <div class="row"><label for="tol">音準容許</label>
       <select id="tol"><option value="10">±10 音分</option><option value="15">±15 音分</option><option value="25" selected>±25 音分（鬆）</option><option value="40">±40 音分（很鬆）</option></select></div>
     <p class="hint">「聽示範」會用目前選的小節與速度，先 4 拍預備拍再播一遍（合成音，不是真陶笛），樂譜游標會跟著走；示範時麥克風是關的。<br>按「開始吹奏」後先聽 4 拍預備拍，接著照譜吹；休止符就停下來。音準、節拍都對，才算一次「正確」。相同的音連著吹時，請用舌頭輕輕「tu」斷開。建議戴耳機，節拍聲才不會被麥克風收進去。一次最多練 16 小節。</p>
@@ -875,6 +884,8 @@ function leave(){
   stopRun();stopDemo();closeMic();
   if(history.length>1)history.back();else location.href='index.html';
 }
+function syncSeg(){const v=$('bpm').value;document.querySelectorAll('#bpmSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));}
+document.querySelectorAll('#bpmSeg button').forEach(b=>b.addEventListener('click',()=>{if($('bpm').disabled)return;$('bpm').value=b.dataset.v;syncSeg();}));
 $('back').addEventListener('click',leave);
 $('pgPrev').addEventListener('click',()=>setPage(curPage-1));
 $('pgNext').addEventListener('click',()=>setPage(curPage+1));
@@ -906,6 +917,7 @@ if(TASK){   /* 任務模式：曲子與範圍由任務指定，不給改；標�
   document.title='陶笛回家練習｜本週任務：'+TASK.name;
 }
 
+syncSeg();
 /* 測試掛鉤（僅供除錯，不影響使用） */
 window.__sp={TASK,Core,showResult,judge,summarize,describe,detectPitch,ampOnsets,get R(){return R;},get cfg(){return cfg;},applyRange,build,SONGS,drawScore,startDemo,stopDemo,get demo(){return demo;}};
 })();
