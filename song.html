@@ -60,6 +60,26 @@ ul.errs li b{font-weight:800}
 .gtext{text-align:center;font-size:20px;font-weight:800;min-height:30px}
 .vol{height:8px;border-radius:5px;background:#fff8;border:1.5px solid var(--ink-2);overflow:hidden;margin-top:6px}
 .vol i{display:block;height:100%;width:0;background:var(--green)}
+.pager{display:flex;align-items:center;justify-content:center;gap:14px;margin:2px 0 6px;font-size:14px;color:var(--ink-2)}
+.pager button{font:inherit;font-size:16px;font-weight:800;border:2px solid var(--ink-2);border-radius:10px;background:var(--vellum-2);color:var(--ink);padding:2px 14px;cursor:pointer}
+.pager button:disabled{opacity:.35}
+body.focus .pager button{visibility:hidden}
+body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #mockNote,body.focus #inapp,body.focus #ctlCard .row,body.focus #ctlCard .hint,body.focus #goBtn{display:none}
+@media (orientation:landscape) and (min-width:560px){
+  body{padding:6px 12px calc(10px + env(safe-area-inset-bottom))}
+  .wrap{max-width:1000px;display:flex;flex-direction:column}
+  h1,#protoNote,#mockNote{display:none}
+  #scoreCard{order:1}#taskCard{order:2}#ctlCard{order:3}#resCard{order:4}
+  #scoreCard h2{font-size:15px;margin:0 0 4px}
+  svg.score{max-height:calc(100vh - 150px)}
+  .card{margin:0 0 8px;padding:8px 12px}
+  #liveBox{display:grid;grid-template-columns:110px 1fr;column-gap:12px;align-items:center}
+  #liveBox .count{grid-column:1;grid-row:1/3;font-size:44px;min-height:0}
+  #liveBox .live{grid-column:1;grid-row:3;min-height:0}
+  #liveBox .gauge{grid-column:2;grid-row:1;margin:0}
+  #liveBox .gtext{grid-column:2;grid-row:2;min-height:24px;font-size:17px}
+  #liveBox .vol{grid-column:2;grid-row:3}
+}
 [hidden]{display:none!important}
 </style>
 <script src="save-core.js"></script>
@@ -83,8 +103,9 @@ ul.errs li b{font-weight:800}
     <div id="doneMsg" class="verdict" style="color:var(--green);margin-top:8px" hidden>🎉 本週任務完成！</div>
   </section>
 
-  <section class="card">
+  <section class="card" id="scoreCard">
     <h2 id="scoreTitle">—　<span id="scoreSub" style="font-size:13px;font-weight:500;color:var(--ink-2)"></span></h2>
+    <div class="pager"><button id="pgPrev" aria-label="上一句">◀</button><span id="pgInfo"></span><button id="pgNext" aria-label="下一句">▶</button></div>
     <svg class="score" id="score" viewBox="0 0 340 330" role="img" aria-label="樂譜"></svg>
     <div class="legend" id="legend" hidden>
       <span><i style="background:var(--green)"></i>音準、節拍都對</span>
@@ -160,7 +181,10 @@ function beatLabel(b){
 
 /* ========== 畫譜（SVG）：依小節範圍動態排版 ========== */
 const ACC_PAD=1.0;   /* 有升降記號的音符，左邊多留的寬度（單位同 wOf） */
-const W=340,CLEF_W=46,ROW_H=106,STEP=4,LINE_GAP=8,AVAIL=W-CLEF_W-6;
+let W=340;const CLEF_W=46,ROW_H=150,STEP=4,LINE_GAP=8;let AVAIL=W-CLEF_W-6;
+/* 動態分頁：一次只顯示一「句」（橫向 4 小節、直向 3 小節），吹到下一句自動翻頁，不用捲動 */
+let PAGES=[],curPage=0;
+function isLand(){return window.matchMedia('(orientation:landscape)').matches&&window.innerWidth>=560;}
 function el(tag,attrs,parent,text){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e;}
 function stepOf(n){return (4+n.oct)*7+(n.deg-1)-(4*7+2);}   /* 相對 E4（下加一線）的音階級數；譜面低一個八度 */
 /* 簡譜時值記號：8 分下加一條線、16 分兩條；2 拍以上在右邊加「－」（每多一拍一條）；附點加「·」 */
@@ -192,7 +216,13 @@ function layoutRows(bars){
 function drawScore(){
   const svg=$('score');svg.innerHTML='';
   const ink='var(--ink)',ink2='var(--ink-2)';
-  const rows=layoutRows(R.bars),ts=R.song.ts;
+  const ts=R.song.ts,land=isLand(),N=land?4:3;
+  const chunks=[];for(let i=0;i<R.bars.length;i+=N)chunks.push(R.bars.slice(i,i+N));
+  W=land?Math.max(600,Math.ceil(Math.max(...chunks.map(c=>c.reduce((a,b)=>a+barMin(b),0))))+CLEF_W+6):340;
+  AVAIL=W-CLEF_W-6;
+  const rows=[];PAGES=[];const pageOfBar={};
+  chunks.forEach((c,pi)=>{const rs=layoutRows(c);PAGES.push({r0:rows.length,rn:rs.length});rs.forEach(x=>rows.push(x));c.forEach(b=>{pageOfBar[b.no]=pi;});});
+  R.notes.forEach(n=>{n.page=pageOfBar[n.bar]||0;});
   const ties=[];
   rows.forEach((row,r)=>{
     const top=r*ROW_H+30,bottom=top+4*LINE_GAP;
@@ -231,7 +261,7 @@ function drawScore(){
       const top=n.top,bottom=n.bottom,x=n.x;
       const gEl=el('g',{'data-i':n.i,style:'cursor:pointer'},svg);
       n.g=gEl;
-      n.hl=el('rect',{x:x-13,y:top-14,width:26,height:ROW_H-6,rx:8,fill:'var(--gold-hi)',opacity:0},gEl);
+      n.hl=el('rect',{x:x-13,y:top-14,width:26,height:100,rx:8,fill:'var(--gold-hi)',opacity:0},gEl);
       const ty=bottom+38;
       if(n.rest){
         const my=bottom-16;
@@ -314,15 +344,23 @@ function drawScore(){
     }
   });
   R.notes.forEach(n=>{n.gEl=n.g;n.g.addEventListener('click',()=>selectNote(n.i));});
-  svg.setAttribute('viewBox',`0 0 ${W} ${rows.length*ROW_H+44}`);
+  setPage(Math.min(curPage,PAGES.length-1));
 }
+function setPage(p){
+  p=Math.max(0,Math.min(p|0,PAGES.length-1));curPage=p;
+  const g=PAGES[p];if(!g)return;
+  $('score').setAttribute('viewBox',`0 ${g.r0*ROW_H} ${W} ${g.rn*ROW_H-20}`);
+  $('pgInfo').textContent='第 '+(p+1)+' / '+PAGES.length+' 句';
+  $('pgPrev').disabled=p<=0;$('pgNext').disabled=p>=PAGES.length-1;
+}
+function follow(n){if(n&&n.page!==curPage)setPage(n.page);}
 function paintNote(n,color,badgeTxt){
   if(n.head){n.head.setAttribute('stroke',color);n.head.setAttribute('fill',n.dur>=2?'var(--vellum-2)':color);}
   (n.stems||[]).forEach(l=>{l.setAttribute('stroke',l.getAttribute('data-flag')?color:color);});
   n.num.setAttribute('fill',color);if(n.accJ)n.accJ.setAttribute('fill',color);
   n.badge.textContent=badgeTxt||'';n.badge.setAttribute('fill',color);
 }
-function resetPaint(){R.notes.forEach(n=>{paintNote(n,'var(--ink)','');n.hl.setAttribute('opacity',0);});$('legend').hidden=true;}
+function resetPaint(){R.notes.forEach(n=>{paintNote(n,'var(--ink)','');n.hl.setAttribute('opacity',0);});$('legend').hidden=true;setPage(0);}
 
 /* ========== 音高偵測（與音準測試頁相同：正規化自相關，180–3500 Hz） ========== */
 function detectPitch(buf,sr){
@@ -582,6 +620,7 @@ async function startRun(){
   $('goBtn').disabled=true;
   try{await openMic();}catch(e){showErr(micError(e));$('goBtn').disabled=false;return;}
   window.Sfx&&Sfx.mic(true);
+  document.body.classList.add('focus');window.scrollTo(0,0);
   const bpm=bpmNow(),beat=60/bpm,tol=parseFloat($('tol').value);
   const T0=ctx.currentTime+0.7;
   const S=T0+COUNT_IN*beat,TB=R.totalBeats,bpb=R.song.ts[0];
@@ -604,7 +643,7 @@ function stopRun(){
   if(run){run.done=true;killClicks(run);run=null;}
   cancelAnimationFrame(raf);
   $('liveBox').hidden=true;$('stopBtn').hidden=true;$('goBtn').hidden=false;$('demoBtn').hidden=false;unlockCtl();
-  resetPaint();
+  document.body.classList.remove('focus');resetPaint();
 }
 function noteAt(r,pos){return r.R.notes.find(n=>pos>=n.beat-1e-9&&pos<n.beat+n.dur-1e-9);}
 function loop(){
@@ -626,7 +665,7 @@ function loop(){
   if(bi>=COUNT_IN&&pos<r.TB){
     const cur=noteAt(r,pos);const id=cur?cur.i:-1;
     if(id!==r.lastHl){r.lastHl=id;r.R.notes.forEach(n=>n.hl.setAttribute('opacity',cur&&n===cur?.55:0));
-      if(cur)setLive(cur.rest?'·':jpNum(cur),'第 '+cur.bar+' 小節'+(cur.rest?'（休止）':''));}
+      if(cur){follow(cur);setLive(cur.rest?'·':jpNum(cur),'第 '+cur.bar+' 小節'+(cur.rest?'（休止）':''));}}
   }
   const ft=now-1024/ctx.sampleRate-(ctx.baseLatency||0);
   const nearClick=r.clicks.some(c=>ft>=c&&ft<=c+0.07);
@@ -655,6 +694,7 @@ function finish(){
   window.Sfx&&Sfx.mic(false);
   r.done=true;killClicks(r);cancelAnimationFrame(raf);run=null;
   const res=judge(r.frames,r.amps,r.S,r.beat,r.outLat,r.tol,r.R.events);
+  document.body.classList.remove('focus');
   showResult(res);
   $('liveBox').hidden=true;$('stopBtn').hidden=true;$('goBtn').hidden=false;$('demoBtn').hidden=false;unlockCtl();
   notifyParent(false);
@@ -687,6 +727,7 @@ function demoUi(on){
   ['bpm','tol','song','preset','from','to'].forEach(id=>$(id).disabled=on);
   ['gauge','gText'].forEach(id=>$(id).hidden=on);$('volBar').parentNode.hidden=on;
   $('liveBox').hidden=!on;
+  document.body.classList.toggle('focus',on);if(on)window.scrollTo(0,0);
 }
 async function startDemo(){
   if(run||demo)return;
@@ -725,7 +766,7 @@ function demoLoop(){
   if(bi>=COUNT_IN&&pos<d.TB){
     const cur=noteAt({R:d.R},pos),id=cur?cur.i:-1;
     if(id!==d.lastHl){d.lastHl=id;d.R.notes.forEach(n=>n.hl.setAttribute('opacity',cur&&n===cur?.55:0));
-      if(cur)setLive(cur.rest?'·':jpNum(cur),'第 '+cur.bar+' 小節'+(cur.rest?'（休止）':''));}
+      if(cur){follow(cur);setLive(cur.rest?'·':jpNum(cur),'第 '+cur.bar+' 小節'+(cur.rest?'（休止）':''));}}
   }
   if(pos>=d.TB+0.3)stopDemo();
 }
@@ -738,6 +779,7 @@ function stopDemo(){
 
 /* ========== 結果顯示 ========== */
 function showResult(res){
+  setPage(0);
   lastRes=res;
   const s=summarize(res);
   res.forEach(r=>{const c=colorOf(r),b=badgeOf(r);r.e.notes.forEach((n,k)=>paintNote(n,c,k===0?b:''));});
@@ -788,7 +830,7 @@ function showResult(res){
 }
 function selectEvent(i){
   if(!lastRes||run)return;
-  const e=R.events[i];R.notes.forEach(n=>n.hl.setAttribute('opacity',e&&e.notes.includes(n)?.55:0));
+  const e=R.events[i];if(e&&e.notes[0])follow(e.notes[0]);R.notes.forEach(n=>n.hl.setAttribute('opacity',e&&e.notes.includes(n)?.55:0));
   document.querySelectorAll('#errList li').forEach(li=>li.classList.toggle('sel',li.dataset.i==String(i)));
   const li=document.querySelector('#errList li[data-i="'+i+'"]');
   if(li)li.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -807,6 +849,11 @@ function leave(){
   if(history.length>1)history.back();else location.href='index.html';
 }
 $('back').addEventListener('click',leave);
+$('pgPrev').addEventListener('click',()=>setPage(curPage-1));
+$('pgNext').addEventListener('click',()=>setPage(curPage+1));
+let lastLand=isLand();
+function onRotate(){const l=isLand();if(l===lastLand||run||demo)return;lastLand=l;const keep=curPage;drawScore();if(lastRes){lastRes.forEach(r=>{const c=colorOf(r),bd=badgeOf(r);r.e.notes.forEach((n,k)=>paintNote(n,c,k===0?bd:''));});setPage(keep);}}
+window.addEventListener('resize',onRotate);
 $('goBtn').addEventListener('click',startRun);
 $('stopBtn').addEventListener('click',()=>{stopRun();notifyParent(true);});
 $('demoBtn').addEventListener('click',()=>{if(demo)stopDemo();else startDemo();});
