@@ -66,19 +66,35 @@ ul.errs li b{font-weight:800}
 body.focus .pager button{visibility:hidden}
 body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #mockNote,body.focus #inapp,body.focus #ctlCard .row,body.focus #ctlCard .hint,body.focus #goBtn{display:none}
 @media (orientation:landscape) and (min-width:560px){
-  body{padding:6px 12px calc(10px + env(safe-area-inset-bottom))}
-  .wrap{max-width:1000px;display:flex;flex-direction:column}
-  h1,#protoNote,#mockNote{display:none}
-  #scoreCard{order:1}#taskCard{order:2}#ctlCard{order:3}#resCard{order:4}
-  #scoreCard h2{font-size:15px;margin:0 0 4px}
-  svg.score{max-height:calc(100vh - 150px)}
-  .card{margin:0 0 8px;padding:8px 12px}
-  #liveBox{display:grid;grid-template-columns:110px 1fr;column-gap:12px;align-items:center}
-  #liveBox .count{grid-column:1;grid-row:1/3;font-size:44px;min-height:0}
-  #liveBox .live{grid-column:1;grid-row:3;min-height:0}
-  #liveBox .gauge{grid-column:2;grid-row:1;margin:0}
-  #liveBox .gtext{grid-column:2;grid-row:2;min-height:24px;font-size:17px}
-  #liveBox .vol{grid-column:2;grid-row:3}
+  /* 橫向：左邊樂譜、右邊按鈕，整個畫面不用捲動（開始吹奏、聽示範都在畫面內） */
+  body{padding:4px 10px calc(6px + env(safe-area-inset-bottom))}
+  .wrap{max-width:1000px;display:grid;grid-template-columns:minmax(0,1fr) 150px;column-gap:8px;align-items:start}
+  .back{grid-column:1/3;padding:0;font-size:13px;line-height:1.2}
+  h1,#protoNote,#mockNote,#taskCard{display:none}
+  #inapp{grid-column:1/3}
+  #scoreCard{grid-column:1;grid-row:2}
+  #ctlCard{grid-column:2;grid-row:2}
+  #resCard{grid-column:1/3;grid-row:3}
+  .card{margin:0 0 6px;padding:6px 10px;border-radius:12px}
+  #scoreCard h2{font-size:14px;margin:0 0 2px}
+  .pager{margin:0 0 2px;gap:10px;font-size:12px}
+  .pager button{font-size:13px;padding:0 12px}
+  svg.score{max-height:calc(100vh - 100px)}
+  #ctlCard .btnrow{flex-direction:column;gap:6px}
+  #ctlCard .btn{font-size:16px;padding:9px 6px}
+  #goBtn,#demoBtn{flex:none}
+  #stopBtn{margin-top:0!important;font-size:14px}
+  #ctlCard .row{margin-top:6px}
+  #rowSong,#rowPreset,#rowRange,#ctlCard .row:has(#tol),#ctlCard .hint{display:none}
+  #ctlCard .row label{font-size:12px}
+  #ctlCard select{font-size:14px;padding:3px 4px}
+  body.focus #scoreTitle,body.focus .pager{display:none}
+  #liveBox{display:grid;grid-template-columns:90px 1fr;column-gap:10px;align-items:center}
+  #liveBox .count{grid-column:1;grid-row:1/3;font-size:38px;min-height:0}
+  #liveBox .live{grid-column:1;grid-row:3;min-height:0;font-size:12px}
+  #liveBox .gauge{grid-column:2;grid-row:1;margin:0;height:20px}
+  #liveBox .gtext{grid-column:2;grid-row:2;min-height:20px;font-size:15px}
+  #liveBox .vol{grid-column:2;grid-row:3;margin-top:2px}
 }
 [hidden]{display:none!important}
 </style>
@@ -182,7 +198,7 @@ function beatLabel(b){
 /* ========== 畫譜（SVG）：依小節範圍動態排版 ========== */
 const ACC_PAD=1.0;   /* 有升降記號的音符，左邊多留的寬度（單位同 wOf） */
 let W=340;const CLEF_W=46,ROW_H=150,STEP=4,LINE_GAP=8;let AVAIL=W-CLEF_W-6;
-/* 動態分頁：一次只顯示一「句」（橫向 4 小節、直向 3 小節），吹到下一句自動翻頁，不用捲動 */
+/* 動態分頁：一次只顯示一「句」（橫向 2 小節、直向 3 小節），吹到下一句自動翻頁，不用捲動 */
 let PAGES=[],curPage=0;
 function isLand(){return window.matchMedia('(orientation:landscape)').matches&&window.innerWidth>=560;}
 function el(tag,attrs,parent,text){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e;}
@@ -216,9 +232,9 @@ function layoutRows(bars){
 function drawScore(){
   const svg=$('score');svg.innerHTML='';
   const ink='var(--ink)',ink2='var(--ink-2)';
-  const ts=R.song.ts,land=isLand(),N=land?4:3;
+  const ts=R.song.ts,land=isLand(),N=land?2:3;
   const chunks=[];for(let i=0;i<R.bars.length;i+=N)chunks.push(R.bars.slice(i,i+N));
-  W=land?Math.max(600,Math.ceil(Math.max(...chunks.map(c=>c.reduce((a,b)=>a+barMin(b),0))))+CLEF_W+6):340;
+  W=land?Math.max(420,Math.ceil(Math.max(...chunks.map(c=>c.reduce((a,b)=>a+barMin(b),0))))+CLEF_W+6):340;
   AVAIL=W-CLEF_W-6;
   const rows=[];PAGES=[];const pageOfBar={};
   chunks.forEach((c,pi)=>{const rs=layoutRows(c);PAGES.push({r0:rows.length,rn:rs.length});rs.forEach(x=>rows.push(x));c.forEach(b=>{pageOfBar[b.no]=pi;});});
