@@ -66,30 +66,27 @@ ul.errs li b{font-weight:800}
 body.focus .pager button{visibility:hidden}
 body.focus #pageTitle,body.focus #taskCard,body.focus #protoNote,body.focus #mockNote,body.focus #inapp,body.focus #ctlCard .row,body.focus #ctlCard .hint,body.focus #goBtn{display:none}
 @media (orientation:landscape) and (min-width:560px){
-  /* 橫向：左邊樂譜、右邊按鈕，整個畫面不用捲動（開始吹奏、聽示範都在畫面內） */
-  body{padding:4px 10px calc(6px + env(safe-area-inset-bottom))}
-  .wrap{max-width:1000px;display:grid;grid-template-columns:minmax(0,1fr) 150px;column-gap:8px;align-items:start}
-  .back{grid-column:1/3;padding:0;font-size:13px;line-height:1.2}
-  h1,#protoNote,#mockNote,#taskCard{display:none}
-  #inapp{grid-column:1/3}
-  #scoreCard{grid-column:1;grid-row:2}
-  #ctlCard{grid-column:2;grid-row:2}
+  /* 橫向：左邊大樂譜；右邊一欄集中「返回、開始吹奏、聽示範、速度」，整頁不捲動 */
+  body{padding:4px 8px calc(4px + env(safe-area-inset-bottom))}
+  .wrap{max-width:1100px;display:grid;grid-template-columns:minmax(0,1fr) 118px;grid-template-rows:auto 1fr;column-gap:6px;align-items:start}
+  h1,#protoNote,#mockNote,#taskCard,#scoreTitle,#inapp,#ctlCard .hint,#rowSong,#rowPreset,#rowRange,#ctlCard .row:has(#tol){display:none}
+  #scoreCard{grid-column:1;grid-row:1/3;margin:0;padding:4px 6px;border-radius:12px}
+  .back{grid-column:2;grid-row:1;text-align:center;font-size:14px;padding:6px 0;border:2px solid var(--ink-2);border-radius:12px;background:var(--vellum-2);width:100%;margin:0 0 6px}
+  #ctlCard{grid-column:2;grid-row:2;margin:0;padding:6px;border-radius:12px}
   #resCard{grid-column:1/3;grid-row:3}
-  .card{margin:0 0 6px;padding:6px 10px;border-radius:12px}
-  #scoreCard h2{font-size:14px;margin:0 0 2px}
-  .pager{margin:0 0 2px;gap:10px;font-size:12px}
-  .pager button{font-size:13px;padding:0 12px}
-  svg.score{max-height:calc(100vh - 100px)}
+  .card{box-shadow:1px 2px 0 var(--shadow)}
+  .pager{margin:0 0 2px;gap:8px;font-size:12px}
+  .pager button{font-size:12px;padding:0 10px}
+  svg.score{max-height:calc(100vh - 56px)}
   #ctlCard .btnrow{flex-direction:column;gap:6px}
-  #ctlCard .btn{font-size:16px;padding:9px 6px}
+  #ctlCard .btn{font-size:15px;padding:10px 4px;border-radius:12px}
   #goBtn,#demoBtn{flex:none}
   #stopBtn{margin-top:0!important;font-size:14px}
-  #ctlCard .row{margin-top:6px}
-  #rowSong,#rowPreset,#rowRange,#ctlCard .row:has(#tol),#ctlCard .hint{display:none}
-  #ctlCard .row label{font-size:12px}
+  #ctlCard .row{margin-top:6px;flex-direction:column;align-items:stretch;gap:2px}
+  #ctlCard .row label{font-size:12px;text-align:center}
   #ctlCard select{font-size:14px;padding:3px 4px}
-  body.focus #scoreTitle,body.focus .pager{display:none}
-  #liveBox{display:grid;grid-template-columns:90px 1fr;column-gap:10px;align-items:center}
+  body.focus .pager{display:none}
+  #liveBox{display:grid;grid-template-columns:80px 1fr;column-gap:8px;align-items:center}
   #liveBox .count{grid-column:1;grid-row:1/3;font-size:38px;min-height:0}
   #liveBox .live{grid-column:1;grid-row:3;min-height:0;font-size:12px}
   #liveBox .gauge{grid-column:2;grid-row:1;margin:0;height:20px}
@@ -221,7 +218,8 @@ function wOf(n){let w;
   else if(n.dur>=0.5)w=0.95;
   else w=0.9;
   if(!n.rest&&n.acc)w+=ACC_PAD;return w;}
-function barMin(b){return 14+b.notes.reduce((a,n)=>a+wOf(n),0)*15;}
+let UNIT=15;
+function barMin(b){return 14+b.notes.reduce((a,n)=>a+wOf(n),0)*UNIT;}
 let R=null;            /* 目前範圍 build() 的結果 */
 function layoutRows(bars){
   const rows=[];let cur=[],w=0;
@@ -232,7 +230,7 @@ function layoutRows(bars){
 function drawScore(){
   const svg=$('score');svg.innerHTML='';
   const ink='var(--ink)',ink2='var(--ink-2)';
-  const ts=R.song.ts,land=isLand(),N=land?2:3;
+  const ts=R.song.ts,land=isLand(),N=land?2:3;UNIT=land?13:15;
   const chunks=[];for(let i=0;i<R.bars.length;i+=N)chunks.push(R.bars.slice(i,i+N));
   W=land?Math.max(420,Math.ceil(Math.max(...chunks.map(c=>c.reduce((a,b)=>a+barMin(b),0))))+CLEF_W+6):340;
   AVAIL=W-CLEF_W-6;
